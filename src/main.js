@@ -10,8 +10,8 @@ canvas.height = HEIGHT;
 canvas.id = "demo";
 document.body.appendChild(canvas);
 
-const gl = canvas.getContext("webgl", { antialias: false, preserveDrawingBuffer: false });
-if (!gl) throw new Error("WebGL not supported");
+const gl = canvas.getContext("webgl2", { antialias: false, preserveDrawingBuffer: false });
+if (!gl) throw new Error("WebGL2 not supported");
 
 function compile(type, src) {
   const sh = gl.createShader(type);

@@ -1,7 +1,10 @@
+#version 300 es
 precision highp float;
 
 uniform vec2 u_resolution;
 uniform float u_time;
+
+out vec4 fragColor;
 
 // Simple plasma placeholder.
 void main() {
@@ -25,5 +28,5 @@ void main() {
     sin(v * 3.14159 + 4.188) * 0.5 + 0.5
   );
 
-  gl_FragColor = vec4(col, 1.0);
+  fragColor = vec4(col, 1.0);
 }
