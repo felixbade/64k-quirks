@@ -22,9 +22,22 @@ mat3 rotX(float a) {
   return mat3(1.0, 0.0, 0.0, 0.0, c, -s, 0.0, s, c);
 }
 
+// Kaleidoscopic IFS: fold + rotate + scale, 5 iterations.
+// Parameters are eyeballed for an architectural / cathedral look.
 float map(vec3 p) {
-  p = rotY(u_time * 0.7) * rotX(u_time * 0.5) * p;
-  return sdBox(p, vec3(0.7));
+  const float scale = 10.9;
+  const vec3 offset = vec3(1.0, 0.85, 0.6);
+  mat3 rot = rotX(0.5) * rotY(0.8);
+
+  float s = 1.0;
+  for (int i = 0; i < 5; i++) {
+    p = abs(p);
+    p = rot * p;
+    p = p * scale - offset * (scale - 1.0);
+    s *= scale;
+  }
+
+  return sdBox(p, vec3(1.0)) / s;
 }
 
 vec3 calcNormal(vec3 p) {
@@ -39,8 +52,14 @@ vec3 calcNormal(vec3 p) {
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
 
-  vec3 ro = vec3(0.0, 0.0, 3.0);
-  vec3 rd = normalize(vec3(uv, -1.5));
+  // Orbit camera around the fractal (centered at origin).
+  vec3 target = vec3(0.0);
+  float a = u_time * 0.3;
+  vec3 ro = target + vec3(sin(a), 0.25, cos(a)) * 3.2;
+  vec3 fwd = normalize(target - ro);
+  vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
+  vec3 up = cross(fwd, right);
+  vec3 rd = normalize(uv.x * right + uv.y * up + 1.5 * fwd);
 
   float t = 0.0;
   bool hit = false;
