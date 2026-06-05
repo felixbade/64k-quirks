@@ -9,8 +9,9 @@ uniform float u_costScale; // steps mapped to full heat at this value
 out vec4 fragColor;
 
 const int RAYS_PER_PIXEL = 5;
-const int STEPS_PER_RAY = 24;
-const int STEPS_PER_RAY_BOUNCE = 12;
+const int STEPS_PER_RAY = 48;
+const int STEPS_PER_RAY_BOUNCE = 24;
+const int BOUNCES = 1;
 const float SKYBOX_DIST = 5.0;
 const float SURF_DIST = 0.001;
 
@@ -117,20 +118,28 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   // cases reflect the ray rather than letting it fall through to the sky.
 
   vec3 p = ro + rd * t;
-  vec3 n = calcNormal(p);
-  vec3 dir = randomHemisphereDir(n, seed);
+  for (int b = 0; b < BOUNCES; b++) {
+    vec3 n = calcNormal(p);
+    vec3 dir = randomHemisphereDir(n, seed + float(b) * 1.618);
 
-  float t2;
-  int steps2;
-  bool escaped2;
-  bool hit2 = trace(p + n * 0.01, dir, t2, steps2, escaped2, STEPS_PER_RAY_BOUNCE);
-  cost += steps2;
-  // On the bounce, only a clean escape sees the sky; a hit or an exhausted step
-  // budget both stay black.
-  if (hit2 || !escaped2) {
-    return 0.0;
+    float tb;
+    int stepsb;
+    bool escapedb;
+    bool hitb = trace(p + n * 0.01, dir, tb, stepsb, escapedb, STEPS_PER_RAY_BOUNCE);
+    cost += stepsb;
+
+    // A clean escape reaches the sky and ends the path.
+    if (escapedb) {
+      return sky(dir);
+    }
+    // Out of bounce budget, or the step budget ran out: stays black.
+    if (b == BOUNCES - 1 || !hitb) {
+      return 0.0;
+    }
+    // Real surface hit with bounces left: continue reflecting from here.
+    p = p + dir * tb;
   }
-  return sky(dir);
+  return 0.0;
 }
 
 // Cheap black -> red -> yellow -> white heat ramp for cost visualization.
