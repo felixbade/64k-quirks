@@ -42,6 +42,11 @@ gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
 const uRes = gl.getUniformLocation(prog, "u_resolution");
 const uTime = gl.getUniformLocation(prog, "u_time");
+const uDebug = gl.getUniformLocation(prog, "u_debug");
+const uCostScale = gl.getUniformLocation(prog, "u_costScale");
+
+let debug = 0;
+let costScale = 960; // 5 rays * (96 primary + 96 bounce); tune with [ and ]
 
 const perf = createPerfOverlay(gl);
 
@@ -50,6 +55,8 @@ function frame(now) {
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.uniform2f(uRes, canvas.width, canvas.height);
   gl.uniform1f(uTime, (now - start) / 1000);
+  gl.uniform1i(uDebug, debug);
+  gl.uniform1f(uCostScale, costScale);
   perf.beginGpu();
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   perf.endGpu();
@@ -65,4 +72,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "p" || e.key === "P") perf.toggle();
   if (e.key === "r" || e.key === "R") perf.reset();
+  if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
+  if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
+  if (e.key === "]") costScale *= 1.25;
 });

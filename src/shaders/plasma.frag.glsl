@@ -3,6 +3,8 @@ precision highp float;
 
 uniform vec2 u_resolution;
 uniform float u_time;
+uniform int u_debug;       // 0 = normal, 1 = cost heatmap
+uniform float u_costScale; // steps mapped to full heat at this value
 
 out vec4 fragColor;
 
@@ -55,9 +57,11 @@ vec3 calcNormal(vec3 p) {
 }
 
 // March a ray up to 100 units. Returns true on hit, writing the distance to t.
-bool trace(vec3 ro, vec3 rd, out float t) {
+// steps reports how many map() evaluations the march consumed.
+bool trace(vec3 ro, vec3 rd, out float t, out int steps) {
   t = 0.0;
   for (int i = 0; i < 96; i++) {
+    steps = i + 1;
     vec3 p = ro + rd * t;
     float d = map(p);
     if (d < 0.001) return true;
@@ -92,9 +96,13 @@ vec3 randomHemisphereDir(vec3 n, vec3 seed) {
 
 // Light value for a ray. Misses see the sky. Hits bounce once in a random
 // hemisphere direction: black if it hits the object again, sky color if it escapes.
-float light(vec3 ro, vec3 rd, vec3 seed) {
+// cost accumulates the total march steps spent on this ray.
+float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   float t;
-  if (!trace(ro, rd, t)) {
+  int steps;
+  bool hit = trace(ro, rd, t, steps);
+  cost += steps;
+  if (!hit) {
     return sky(rd);
   }
 
@@ -103,10 +111,19 @@ float light(vec3 ro, vec3 rd, vec3 seed) {
   vec3 dir = randomHemisphereDir(n, seed);
 
   float t2;
-  if (trace(p + n * 0.01, dir, t2)) {
+  int steps2;
+  bool hit2 = trace(p + n * 0.01, dir, t2, steps2);
+  cost += steps2;
+  if (hit2) {
     return 0.0;
   }
   return sky(dir);
+}
+
+// Cheap black -> red -> yellow -> white heat ramp for cost visualization.
+vec3 heat(float x) {
+  x = clamp(x, 0.0, 1.0);
+  return clamp(vec3(x * 3.0, x * 3.0 - 1.0, x * 3.0 - 2.0), 0.0, 1.0);
 }
 
 void main() {
@@ -122,11 +139,18 @@ void main() {
   vec3 rd = normalize(uv.x * right + uv.y * up + 1.5 * fwd);
 
   float l = 0.0;
+  int cost = 0;
   for (int i = 0; i < RAYS_PER_PIXEL; i++) {
     vec3 seed = vec3(gl_FragCoord.xy, u_time + float(i) * 1.618);
-    l += light(ro, rd, seed);
+    l += light(ro, rd, seed, cost);
   }
   l /= float(RAYS_PER_PIXEL);
+
+  if (u_debug == 1) {
+    fragColor = vec4(heat(float(cost) / u_costScale), 1.0);
+    return;
+  }
+
   vec3 col = vec3(l);
 
   col = pow(col, vec3(0.4545));
