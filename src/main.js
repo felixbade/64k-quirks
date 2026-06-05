@@ -51,6 +51,23 @@ let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
 
 const perf = createPerfOverlay(gl);
 
+let audioCtx = null;
+function kick() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  gain.gain.setValueAtTime(1, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + 0.4);
+}
+
 const start = performance.now();
 function frame(now) {
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -74,6 +91,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") perf.toggle();
   if (e.key === "r" || e.key === "R") perf.reset();
   if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
+  if (e.key === "k" || e.key === "K") kick();
   if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
   if (e.key === "]") costScale *= 1.25;
 });
