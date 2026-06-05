@@ -85,9 +85,13 @@ function bassKey() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
   if (bass) {
-    const factors = [2, 1.5, 1 / 2, 1 / 1.5];
+    const FMIN = 50;
+    const FMAX = 100;
+    const factors = [5 / 4];
     const f = factors[(Math.random() * factors.length) | 0];
     bass.freq *= f;
+    while (bass.freq > FMAX) bass.freq /= 2;
+    while (bass.freq < FMIN) bass.freq *= 2;
     const t = audioCtx.currentTime;
     bass.oscs.forEach((o) => o.frequency.setValueAtTime(bass.freq, t));
     return;
