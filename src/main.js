@@ -1,5 +1,6 @@
 import vertSrc from "./shaders/plasma.vert.glsl";
 import fragSrc from "./shaders/plasma.frag.glsl";
+import { createPerfOverlay } from "./perf.js";
 
 const WIDTH = 1920;
 const HEIGHT = 1080;
@@ -42,12 +43,17 @@ gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 const uRes = gl.getUniformLocation(prog, "u_resolution");
 const uTime = gl.getUniformLocation(prog, "u_time");
 
+const perf = createPerfOverlay(gl);
+
 const start = performance.now();
 function frame(now) {
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.uniform2f(uRes, canvas.width, canvas.height);
   gl.uniform1f(uTime, (now - start) / 1000);
+  perf.beginGpu();
   gl.drawArrays(gl.TRIANGLES, 0, 3);
+  perf.endGpu();
+  perf.update(now);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -57,4 +63,6 @@ window.addEventListener("keydown", (e) => {
     if (document.fullscreenElement) document.exitFullscreen();
     else canvas.requestFullscreen();
   }
+  if (e.key === "p" || e.key === "P") perf.toggle();
+  if (e.key === "r" || e.key === "R") perf.reset();
 });
