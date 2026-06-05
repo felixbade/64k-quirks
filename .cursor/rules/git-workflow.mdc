@@ -1,0 +1,12 @@
+---
+description: Git workflow — main branch only, no feature branches
+alwaysApply: true
+---
+
+# Git workflow
+
+This project uses **main only**.
+
+- Commit directly on `main`
+- Do not create feature branches (including `cursor/*` prefixes)
+- Do not suggest branch-based workflows unless the user explicitly asks
