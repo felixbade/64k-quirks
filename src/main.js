@@ -96,6 +96,28 @@ function randomPhaseSaw(ctx, freq, phase) {
   return ctx.createPeriodicWave(real, imag);
 }
 
+function hihat() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  const t = audioCtx.currentTime;
+  const dur = 0.05;
+  const n = Math.floor(audioCtx.sampleRate * dur);
+  const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.setValueAtTime(7000, t);
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.5, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(hp).connect(gain).connect(audioCtx.destination);
+  src.start(t);
+  src.stop(t + dur);
+}
+
 let bass = null;
 function bassKey() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -160,6 +182,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
   if (e.key === "k" || e.key === "K") kick();
   if (e.key === "b" || e.key === "B") bassKey();
+  if (e.key === "h" || e.key === "H") hihat();
   if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
   if (e.key === "]") costScale *= 1.25;
 });
