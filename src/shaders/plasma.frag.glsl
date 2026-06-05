@@ -9,6 +9,8 @@ uniform float u_costScale; // steps mapped to full heat at this value
 out vec4 fragColor;
 
 const int RAYS_PER_PIXEL = 5;
+const int STEPS_PER_RAY = 24;
+const int STEPS_PER_RAY_BOUNCE = 12;
 
 // Box signed distance function.
 float sdBox(vec3 p, vec3 b) {
@@ -58,9 +60,9 @@ vec3 calcNormal(vec3 p) {
 
 // March a ray up to 100 units. Returns true on hit, writing the distance to t.
 // steps reports how many map() evaluations the march consumed.
-bool trace(vec3 ro, vec3 rd, out float t, out int steps) {
+bool trace(vec3 ro, vec3 rd, out float t, out int steps, int maxSteps) {
   t = 0.0;
-  for (int i = 0; i < 96; i++) {
+  for (int i = 0; i < maxSteps; i++) {
     steps = i + 1;
     vec3 p = ro + rd * t;
     float d = map(p);
@@ -100,7 +102,7 @@ vec3 randomHemisphereDir(vec3 n, vec3 seed) {
 float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   float t;
   int steps;
-  bool hit = trace(ro, rd, t, steps);
+  bool hit = trace(ro, rd, t, steps, STEPS_PER_RAY);
   cost += steps;
   if (!hit) {
     return sky(rd);
@@ -112,7 +114,7 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
 
   float t2;
   int steps2;
-  bool hit2 = trace(p + n * 0.01, dir, t2, steps2);
+  bool hit2 = trace(p + n * 0.01, dir, t2, steps2, STEPS_PER_RAY_BOUNCE);
   cost += steps2;
   if (hit2) {
     return 0.0;

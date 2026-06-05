@@ -46,7 +46,7 @@ const uDebug = gl.getUniformLocation(prog, "u_debug");
 const uCostScale = gl.getUniformLocation(prog, "u_costScale");
 
 let debug = 0;
-let costScale = 960; // 5 rays * (96 primary + 96 bounce); tune with [ and ]
+let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
 
 const perf = createPerfOverlay(gl);
 
