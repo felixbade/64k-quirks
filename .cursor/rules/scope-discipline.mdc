@@ -1,0 +1,17 @@
+---
+description: Stay within requested scope; do not fix unrequested issues
+alwaysApply: true
+---
+
+# Scope discipline
+
+Do only what the user asked. Do not expand scope on your own.
+
+- Do NOT try to fix issues the user did not ask about (e.g. off-center
+  framing, visual quirks, perf) unless they explicitly request it.
+- If the user says a value/parameter is "don't worry about it",
+  "doesn't matter", "placeholder", or similar, leave it alone. Do not
+  tune, "improve", or refactor it.
+- Prefer asking a short question over guessing when intent is unclear.
+- Pointing at code (a diff/selection) is not implicit permission to
+  change it. Wait for an explicit instruction.
