@@ -6,6 +6,8 @@ uniform float u_time;
 
 out vec4 fragColor;
 
+const int RAYS_PER_PIXEL = 5;
+
 // Box signed distance function.
 float sdBox(vec3 p, vec3 b) {
   vec3 q = abs(p) - b;
@@ -119,8 +121,12 @@ void main() {
   vec3 up = cross(fwd, right);
   vec3 rd = normalize(uv.x * right + uv.y * up + 1.5 * fwd);
 
-  vec3 seed = vec3(gl_FragCoord.xy, u_time);
-  float l = light(ro, rd, seed);
+  float l = 0.0;
+  for (int i = 0; i < RAYS_PER_PIXEL; i++) {
+    vec3 seed = vec3(gl_FragCoord.xy, u_time + float(i) * 1.618);
+    l += light(ro, rd, seed);
+  }
+  l /= float(RAYS_PER_PIXEL);
   vec3 col = vec3(l);
 
   col = pow(col, vec3(0.4545));
