@@ -2,13 +2,14 @@ import vertSrc from "./shaders/plasma.vert.glsl";
 import fragSrc from "./shaders/plasma.frag.glsl";
 import { createPerfOverlay } from "./perf.js";
 
-const WIDTH = 1920;
-const HEIGHT = 1080;
+const WIDTH = 1920 / 3;
+const HEIGHT = 1080 / 3;
 
 const canvas = document.createElement("canvas");
 canvas.width = WIDTH;
 canvas.height = HEIGHT;
 canvas.id = "demo";
+canvas.style.imageRendering = "pixelated";
 document.body.appendChild(canvas);
 
 const gl = canvas.getContext("webgl2", { antialias: false, preserveDrawingBuffer: false });

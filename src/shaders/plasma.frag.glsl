@@ -8,12 +8,14 @@ uniform float u_costScale; // steps mapped to full heat at this value
 
 out vec4 fragColor;
 
-const int RAYS_PER_PIXEL = 5;
+const int RAYS_PER_PIXEL = 20;
 const int STEPS_PER_RAY = 48;
-const int STEPS_PER_RAY_BOUNCE = 48;
+const int STEPS_PER_RAY_BOUNCE = 24;
 const int BOUNCES = 3;
 const float SKYBOX_DIST = 5.0;
 const float SURF_DIST = 0.001;
+const float BRIGHTNESS = 2.0;
+const float BOOST_CONTRAST = 2.0;
 
 // Box signed distance function.
 float sdBox(vec3 p, vec3 b) {
@@ -81,7 +83,7 @@ bool trace(vec3 ro, vec3 rd, out float t, out int steps, out bool escaped, int m
 
 // Sky light: white in the top hemisphere, black in the bottom.
 float sky(vec3 rd) {
-  return step(0.0, rd.y);
+  return step(0.0, rd.y) * BRIGHTNESS;
 }
 
 // Two pseudo-random floats in [0, 1) from a seed (Dave Hoskins hash23).
@@ -125,7 +127,7 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
 
     // Fresnel-Schlick reflectance (dielectric F0) for the current view angle.
     float cosTheta = clamp(dot(-incoming, n), 0.0, 1.0);
-    float fresnel = 0.3 + 0.7 * pow(1.0 - cosTheta, 5.0);
+    float fresnel = 0.2 + 0.8 * pow(1.0 - cosTheta, 5.0);
 
     // Fork: a fresnel-weighted fraction of rays mirror-reflect, the rest diffuse.
     vec3 dir;
@@ -189,7 +191,7 @@ void main() {
 
   vec3 col = vec3(l);
 
+  col = pow(col, vec3(exp(BOOST_CONTRAST)));
   col = col / (1.0 + col); // Reinhard tone mapping
-  col = pow(col, vec3(0.4545));
   fragColor = vec4(col, 1.0);
 }
