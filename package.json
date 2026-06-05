@@ -1,0 +1,13 @@
+{
+  "name": "graffathon-demo",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "1080p WebGL plasma demo, bundled to single file.",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --serve"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0"
+  }
+}
