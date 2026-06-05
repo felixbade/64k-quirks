@@ -259,8 +259,8 @@ function bassKey() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
   if (bass) {
-    const FMIN = 50;
-    const FMAX = 100;
+    const FMIN = 30;
+    const FMAX = 60;
     const factors = [5 / 4];
     const f = factors[(Math.random() * factors.length) | 0];
     bass.freq *= f;
@@ -271,7 +271,7 @@ function bassKey() {
     return;
   }
   const t = audioCtx.currentTime;
-  const baseFreq = 100;
+  const baseFreq = 50;
   const VOICES = 30;
   const DETUNE = 15; // cents spread across unison
   const gain = audioCtx.createGain();
