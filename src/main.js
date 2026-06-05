@@ -81,19 +81,19 @@ function randomPhaseSaw(ctx, freq, phase) {
 }
 
 let bass = null;
-function toggleBass() {
+function bassKey() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
   if (bass) {
+    const factors = [2, 1.5, 1 / 2, 1 / 1.5];
+    const f = factors[(Math.random() * factors.length) | 0];
+    bass.freq *= f;
     const t = audioCtx.currentTime;
-    bass.gain.gain.cancelScheduledValues(t);
-    bass.gain.gain.setValueAtTime(bass.gain.gain.value, t);
-    bass.gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-    bass.oscs.forEach((o) => o.stop(t + 0.12));
-    bass = null;
+    bass.oscs.forEach((o) => o.frequency.setValueAtTime(bass.freq, t));
     return;
   }
   const t = audioCtx.currentTime;
+  const baseFreq = 100;
   const VOICES = 30;
   const DETUNE = 15; // cents spread across unison
   const gain = audioCtx.createGain();
@@ -104,15 +104,15 @@ function toggleBass() {
   for (let i = 0; i < VOICES; i++) {
     const o = audioCtx.createOscillator();
     const vg = audioCtx.createGain();
-    o.setPeriodicWave(randomPhaseSaw(audioCtx, 30, Math.random() * 2 * Math.PI));
-    o.frequency.setValueAtTime(30, t);
+    o.setPeriodicWave(randomPhaseSaw(audioCtx, baseFreq, Math.random() * 2 * Math.PI));
+    o.frequency.setValueAtTime(baseFreq, t);
     o.detune.setValueAtTime((Math.random() * 2 - 1) * DETUNE, t);
     vg.gain.setValueAtTime(1 / VOICES, t);
     o.connect(vg).connect(gain);
     o.start(t);
     oscs.push(o);
   }
-  bass = { oscs, gain };
+  bass = { oscs, gain, freq: baseFreq };
 }
 
 const start = performance.now();
@@ -139,7 +139,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "r" || e.key === "R") perf.reset();
   if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
   if (e.key === "k" || e.key === "K") kick();
-  if (e.key === "b" || e.key === "B") toggleBass();
+  if (e.key === "b" || e.key === "B") bassKey();
   if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
   if (e.key === "]") costScale *= 1.25;
 });
