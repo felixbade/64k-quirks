@@ -62,15 +62,18 @@ vec3 calcNormal(vec3 p) {
 
 // March a ray up to SKYBOX_DIST units. Returns true on hit, writing the distance to t.
 // steps reports how many map() evaluations the march consumed.
-bool trace(vec3 ro, vec3 rd, out float t, out int steps, int maxSteps) {
+// escaped is set when the ray exited past SKYBOX_DIST; a false miss means the
+// step budget ran out while still inside the scene.
+bool trace(vec3 ro, vec3 rd, out float t, out int steps, out bool escaped, int maxSteps) {
   t = 0.0;
+  escaped = false;
   for (int i = 0; i < maxSteps; i++) {
     steps = i + 1;
     vec3 p = ro + rd * t;
     float d = map(p);
     if (d < SURF_DIST) return true;
     t += d;
-    if (t > SKYBOX_DIST) break;
+    if (t > SKYBOX_DIST) { escaped = true; break; }
   }
   return false;
 }
@@ -104,11 +107,14 @@ vec3 randomHemisphereDir(vec3 n, vec3 seed) {
 float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   float t;
   int steps;
-  bool hit = trace(ro, rd, t, steps, STEPS_PER_RAY);
+  bool escaped;
+  bool hit = trace(ro, rd, t, steps, escaped, STEPS_PER_RAY);
   cost += steps;
-  if (!hit) {
+  if (!hit && escaped) {
     return sky(rd);
   }
+  // Either a real surface hit or the step budget ran out near geometry; in both
+  // cases reflect the ray rather than letting it fall through to the sky.
 
   vec3 p = ro + rd * t;
   vec3 n = calcNormal(p);
@@ -116,9 +122,12 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
 
   float t2;
   int steps2;
-  bool hit2 = trace(p + n * 0.01, dir, t2, steps2, STEPS_PER_RAY_BOUNCE);
+  bool escaped2;
+  bool hit2 = trace(p + n * 0.01, dir, t2, steps2, escaped2, STEPS_PER_RAY_BOUNCE);
   cost += steps2;
-  if (hit2) {
+  // On the bounce, only a clean escape sees the sky; a hit or an exhausted step
+  // budget both stay black.
+  if (hit2 || !escaped2) {
     return 0.0;
   }
   return sky(dir);
