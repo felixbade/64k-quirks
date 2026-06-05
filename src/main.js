@@ -52,6 +52,26 @@ let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
 const perf = createPerfOverlay(gl);
 
 let audioCtx = null;
+let drumBus = null;
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (!drumBus) {
+    const gain = audioCtx.createGain();
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 11000;
+    lp.Q.value = 0.5;
+    gain.connect(lp).connect(audioCtx.destination);
+    drumBus = { gain, lp };
+  }
+}
+
+function drumDest() {
+  ensureAudio();
+  return drumBus.gain;
+}
 
 function makeDistortionCurve(amount) {
   const n = 44100;
@@ -63,25 +83,28 @@ function makeDistortionCurve(amount) {
   return curve;
 }
 
-function kick(when) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
+function kick(when, vel = 1) {
+  ensureAudio();
   const t = when ?? audioCtx.currentTime;
+  const startFreq = 100 + (Math.random() - 0.5) * 6;
+  const endFreq = 20 + (Math.random() - 0.5) * 3;
+  const decay = 0.08 + (Math.random() - 0.5) * 0.008;
+  const tail = 0.8 + (Math.random() - 0.5) * 0.04;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = "sine";
-  osc.frequency.setValueAtTime(100, t);
-  osc.frequency.exponentialRampToValueAtTime(20, t + 0.08);
-  gain.gain.setValueAtTime(1, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  osc.frequency.setValueAtTime(startFreq, t);
+  osc.frequency.exponentialRampToValueAtTime(endFreq, t + decay);
+  gain.gain.setValueAtTime(vel, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + tail);
   const shaper = audioCtx.createWaveShaper();
   shaper.curve = makeDistortionCurve(10);
   shaper.oversample = "4x";
   const out = audioCtx.createGain();
-  out.gain.setValueAtTime(0.6, t);
-  osc.connect(gain).connect(shaper).connect(out).connect(audioCtx.destination);
+  out.gain.setValueAtTime(0.6 * vel, t);
+  osc.connect(gain).connect(shaper).connect(out).connect(drumDest());
   osc.start(t);
-  osc.stop(t + 0.8);
+  osc.stop(t + tail);
 }
 
 function randomPhaseSaw(ctx, freq, phase) {
@@ -96,11 +119,10 @@ function randomPhaseSaw(ctx, freq, phase) {
   return ctx.createPeriodicWave(real, imag);
 }
 
-function hihat(when) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
+function hihat(when, vel = 1) {
+  ensureAudio();
   const t = when ?? audioCtx.currentTime;
-  const dur = 0.05;
+  const dur = 0.05 + (Math.random() - 0.5) * 0.012;
   const n = Math.floor(audioCtx.sampleRate * dur);
   const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
   const data = buf.getChannelData(0);
@@ -109,20 +131,20 @@ function hihat(when) {
   src.buffer = buf;
   const hp = audioCtx.createBiquadFilter();
   hp.type = "highpass";
-  hp.frequency.setValueAtTime(7000, t);
+  hp.frequency.setValueAtTime(7000 + (Math.random() - 0.5) * 800, t);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.5, t);
+  gain.gain.setValueAtTime(0.5 * vel, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  src.connect(hp).connect(gain).connect(audioCtx.destination);
+  src.connect(hp).connect(gain).connect(drumDest());
   src.start(t);
   src.stop(t + dur);
 }
 
-function snare(when) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
+function snare(when, vel = 1) {
+  ensureAudio();
   const t = when ?? audioCtx.currentTime;
   const dur = 0.2;
+  const body = 180 + (Math.random() - 0.5) * 12;
   const n = Math.floor(audioCtx.sampleRate * dur);
   const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
   const data = buf.getChannelData(0);
@@ -131,20 +153,20 @@ function snare(when) {
   src.buffer = buf;
   const hp = audioCtx.createBiquadFilter();
   hp.type = "highpass";
-  hp.frequency.setValueAtTime(1500, t);
+  hp.frequency.setValueAtTime(1500 + (Math.random() - 0.5) * 200, t);
   const nGain = audioCtx.createGain();
-  nGain.gain.setValueAtTime(0.6, t);
+  nGain.gain.setValueAtTime(0.6 * vel, t);
   nGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  src.connect(hp).connect(nGain).connect(audioCtx.destination);
+  src.connect(hp).connect(nGain).connect(drumDest());
 
   const osc = audioCtx.createOscillator();
   osc.type = "triangle";
-  osc.frequency.setValueAtTime(180, t);
+  osc.frequency.setValueAtTime(body, t);
   osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
   const oGain = audioCtx.createGain();
-  oGain.gain.setValueAtTime(0.5, t);
+  oGain.gain.setValueAtTime(0.5 * vel, t);
   oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-  osc.connect(oGain).connect(audioCtx.destination);
+  osc.connect(oGain).connect(drumDest());
 
   src.start(t);
   src.stop(t + dur);
@@ -159,26 +181,72 @@ const AMEN = {
   snare: new Set([4, 12, 15, 20, 28, 30]),
   hat: new Set(Array.from({ length: 16 }, (_, i) => i * 2)),
 };
+const AMEN_FILL = {
+  kick: new Set([0, 8, 10, 16, 22]),
+  snare: new Set([4, 12, 14, 15, 20, 26, 28, 29, 30, 31]),
+  hat: new Set(Array.from({ length: 16 }, (_, i) => i * 2)),
+};
+const GHOST_SNARE = new Set([15, 30]);
+const KICK_VEL = { 0: 1, 10: 0.82, 16: 0.92, 22: 0.78, 8: 0.55 };
+const SNARE_VEL = { 4: 1, 12: 0.95, 15: 0.42, 20: 0.88, 28: 0.98, 30: 0.38, 14: 0.5, 26: 0.45, 29: 0.52 };
 const AMEN_BPM = 165;
+
+function makeChopMap() {
+  const map = Array.from({ length: AMEN_STEPS }, (_, i) => i);
+  for (let bar = 0; bar < 2; bar++) {
+    const base = bar * 16;
+    if (Math.random() < 0.6) {
+      const a = base + 4 + ((Math.random() * 5) | 0) * 2;
+      [map[a], map[a + 1]] = [map[a + 1], map[a]];
+    }
+  }
+  return map;
+}
+
+function drumVel(kind, step) {
+  const table = kind === "kick" ? KICK_VEL : kind === "snare" ? SNARE_VEL : null;
+  const base = table?.[step] ?? 0.88;
+  return base * (0.94 + Math.random() * 0.06);
+}
+
+function humanizeTime(t, step, stepDur) {
+  t += (Math.random() - 0.5) * 0.003;
+  if (step % 2 === 1) t += stepDur * 0.018;
+  return t;
+}
 
 let amen = null;
 function toggleAmen() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  ensureAudio();
   if (amen) {
     clearInterval(amen.timer);
     amen = null;
     return;
   }
-  const stepDur = 60 / AMEN_BPM / 4; // 16th note
-  amen = { step: 0, nextTime: audioCtx.currentTime + 0.05, timer: 0 };
+  const stepDur = 60 / AMEN_BPM / 4;
+  amen = {
+    step: 0,
+    nextTime: audioCtx.currentTime + 0.05,
+    timer: 0,
+  };
   const schedule = () => {
     while (amen.nextTime < audioCtx.currentTime + 0.1) {
       const s = amen.step % AMEN_STEPS;
-      if (AMEN.kick.has(s)) kick(amen.nextTime);
-      if (AMEN.snare.has(s)) snare(amen.nextTime);
-      if (AMEN.hat.has(s)) hihat(amen.nextTime);
-      amen.nextTime += stepDur;
+      const src = s;
+      const pat = Math.floor(amen.step / AMEN_STEPS) % 4 === 3 ? AMEN_FILL : AMEN;
+      const loopPhase = s / AMEN_STEPS;
+      const cutoff = 11000 + Math.sin(loopPhase * Math.PI * 2) * 1200;
+      drumBus.lp.frequency.setValueAtTime(cutoff, amen.nextTime);
+
+      const when = humanizeTime(amen.nextTime, s, stepDur);
+      if (pat.kick.has(src)) kick(when, drumVel("kick", src));
+      if (pat.snare.has(src)) {
+        if (!GHOST_SNARE.has(src) || Math.random() < 0.72) snare(when, drumVel("snare", src));
+      }
+      if (pat.hat.has(src)) hihat(when, drumVel("hat", src));
+      else if (Math.random() < 0.06) hihat(when, 0.35);
+
+      amen.nextTime += stepDur * (1 + (Math.random() - 0.5) * 0.006);
       amen.step++;
     }
   };
