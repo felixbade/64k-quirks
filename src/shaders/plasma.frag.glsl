@@ -10,8 +10,8 @@ out vec4 fragColor;
 
 const int RAYS_PER_PIXEL = 5;
 const int STEPS_PER_RAY = 48;
-const int STEPS_PER_RAY_BOUNCE = 24;
-const int BOUNCES = 1;
+const int STEPS_PER_RAY_BOUNCE = 48;
+const int BOUNCES = 3;
 const float SKYBOX_DIST = 5.0;
 const float SURF_DIST = 0.001;
 
@@ -42,7 +42,7 @@ float map(vec3 p) {
   p /= size;
 
   float s = 1.0;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 3; i++) {
     p = abs(p);
     p = rot * p;
     p = p * scale - offset * (scale - 1.0);
@@ -118,9 +118,22 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   // cases reflect the ray rather than letting it fall through to the sky.
 
   vec3 p = ro + rd * t;
+  vec3 incoming = rd;
   for (int b = 0; b < BOUNCES; b++) {
     vec3 n = calcNormal(p);
-    vec3 dir = randomHemisphereDir(n, seed + float(b) * 1.618);
+    vec3 bseed = seed + float(b) * 1.618;
+
+    // Fresnel-Schlick reflectance (dielectric F0) for the current view angle.
+    float cosTheta = clamp(dot(-incoming, n), 0.0, 1.0);
+    float fresnel = 0.3 + 0.7 * pow(1.0 - cosTheta, 5.0);
+
+    // Fork: a fresnel-weighted fraction of rays mirror-reflect, the rest diffuse.
+    vec3 dir;
+    if (hash23(bseed * 1.37 + 7.0).x < fresnel) {
+      dir = reflect(incoming, n);
+    } else {
+      dir = randomHemisphereDir(n, bseed);
+    }
 
     float tb;
     int stepsb;
@@ -138,6 +151,7 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
     }
     // Real surface hit with bounces left: continue reflecting from here.
     p = p + dir * tb;
+    incoming = dir;
   }
   return 0.0;
 }
