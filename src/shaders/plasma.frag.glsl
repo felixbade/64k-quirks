@@ -16,6 +16,8 @@ const float SKYBOX_DIST = 5.0;
 const float SURF_DIST = 0.001;
 const float BRIGHTNESS = 2.0;
 const float BOOST_CONTRAST = 2.0;
+const vec3 SKY_COLOR = vec3(1.0, 0.85, 0.6);     // hdr, yellow/orange
+const vec3 GROUND_COLOR = vec3(0.0, 0.05, 0.1); // hdr, blue/teal
 
 // Box signed distance function.
 float sdBox(vec3 p, vec3 b) {
@@ -82,8 +84,8 @@ bool trace(vec3 ro, vec3 rd, out float t, out int steps, out bool escaped, int m
 }
 
 // Sky light: white in the top hemisphere, black in the bottom.
-float sky(vec3 rd) {
-  return step(0.0, rd.y) * BRIGHTNESS;
+vec3 sky(vec3 rd) {
+  return mix(GROUND_COLOR, SKY_COLOR, step(0.0, rd.y)) * BRIGHTNESS;
 }
 
 // Two pseudo-random floats in [0, 1) from a seed (Dave Hoskins hash23).
@@ -107,7 +109,7 @@ vec3 randomHemisphereDir(vec3 n, vec3 seed) {
 // Light value for a ray. Misses see the sky. Hits bounce once in a random
 // hemisphere direction: black if it hits the object again, sky color if it escapes.
 // cost accumulates the total march steps spent on this ray.
-float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
+vec3 light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   float t;
   int steps;
   bool escaped;
@@ -147,15 +149,15 @@ float light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
     if (escapedb) {
       return sky(dir);
     }
-    // Out of bounce budget, or the step budget ran out: stays black.
+    // Out of bounce budget, or the step budget ran out: fall back to ground.
     if (b == BOUNCES - 1 || !hitb) {
-      return 0.0;
+      return GROUND_COLOR * BRIGHTNESS;
     }
     // Real surface hit with bounces left: continue reflecting from here.
     p = p + dir * tb;
     incoming = dir;
   }
-  return 0.0;
+  return GROUND_COLOR * BRIGHTNESS;
 }
 
 // Cheap black -> red -> yellow -> white heat ramp for cost visualization.
@@ -176,7 +178,7 @@ void main() {
   vec3 up = cross(fwd, right);
   vec3 rd = normalize(uv.x * right + uv.y * up + 1.5 * fwd);
 
-  float l = 0.0;
+  vec3 l = vec3(0.0);
   int cost = 0;
   for (int i = 0; i < RAYS_PER_PIXEL; i++) {
     vec3 seed = vec3(gl_FragCoord.xy, u_time + float(i) * 1.618);
@@ -189,7 +191,7 @@ void main() {
     return;
   }
 
-  vec3 col = vec3(l);
+  vec3 col = l;
 
   col = pow(col, vec3(exp(BOOST_CONTRAST)));
   col = col / (1.0 + col); // Reinhard tone mapping
