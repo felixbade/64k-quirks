@@ -52,6 +52,17 @@ let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
 const perf = createPerfOverlay(gl);
 
 let audioCtx = null;
+
+function makeDistortionCurve(amount) {
+  const n = 44100;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = ((1 + amount) * x) / (1 + amount * Math.abs(x));
+  }
+  return curve;
+}
+
 function kick() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
@@ -59,13 +70,18 @@ function kick() {
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = "sine";
-  osc.frequency.setValueAtTime(150, t);
-  osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  osc.frequency.setValueAtTime(100, t);
+  osc.frequency.exponentialRampToValueAtTime(20, t + 0.08);
   gain.gain.setValueAtTime(1, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-  osc.connect(gain).connect(audioCtx.destination);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  const shaper = audioCtx.createWaveShaper();
+  shaper.curve = makeDistortionCurve(10);
+  shaper.oversample = "4x";
+  const out = audioCtx.createGain();
+  out.gain.setValueAtTime(0.6, t);
+  osc.connect(gain).connect(shaper).connect(out).connect(audioCtx.destination);
   osc.start(t);
-  osc.stop(t + 0.4);
+  osc.stop(t + 0.8);
 }
 
 function randomPhaseSaw(ctx, freq, phase) {
