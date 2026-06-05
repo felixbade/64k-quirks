@@ -175,6 +175,7 @@ void main() {
 
   vec3 col = vec3(l);
 
+  col = col / (1.0 + col); // Reinhard tone mapping
   col = pow(col, vec3(0.4545));
   fragColor = vec4(col, 1.0);
 }
