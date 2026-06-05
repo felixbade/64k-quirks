@@ -27,7 +27,10 @@ mat3 rotX(float a) {
 float map(vec3 p) {
   const float scale = 1.9;
   const vec3 offset = vec3(1.0, 0.85, 0.6);
+  const float size = 2.0;
   mat3 rot = rotX(0.5) * rotY(0.8);
+
+  p /= size;
 
   float s = 1.0;
   for (int i = 0; i < 5; i++) {
@@ -37,7 +40,7 @@ float map(vec3 p) {
     s *= scale;
   }
 
-  return sdBox(p, vec3(1.0)) / s;
+  return sdBox(p, vec3(1.0)) / s * size;
 }
 
 vec3 calcNormal(vec3 p) {
