@@ -25,7 +25,7 @@ mat3 rotX(float a) {
 // Kaleidoscopic IFS: fold + rotate + scale, 5 iterations.
 // Parameters are eyeballed for an architectural / cathedral look.
 float map(vec3 p) {
-  const float scale = 10.9;
+  const float scale = 1.9;
   const vec3 offset = vec3(1.0, 0.85, 0.6);
   mat3 rot = rotX(0.5) * rotY(0.8);
 
