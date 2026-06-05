@@ -118,6 +118,40 @@ function hihat() {
   src.stop(t + dur);
 }
 
+function snare() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  const t = audioCtx.currentTime;
+  const dur = 0.2;
+  const n = Math.floor(audioCtx.sampleRate * dur);
+  const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.setValueAtTime(1500, t);
+  const nGain = audioCtx.createGain();
+  nGain.gain.setValueAtTime(0.6, t);
+  nGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(hp).connect(nGain).connect(audioCtx.destination);
+
+  const osc = audioCtx.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(180, t);
+  osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
+  const oGain = audioCtx.createGain();
+  oGain.gain.setValueAtTime(0.5, t);
+  oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osc.connect(oGain).connect(audioCtx.destination);
+
+  src.start(t);
+  src.stop(t + dur);
+  osc.start(t);
+  osc.stop(t + 0.12);
+}
+
 let bass = null;
 function bassKey() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -183,6 +217,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "k" || e.key === "K") kick();
   if (e.key === "b" || e.key === "B") bassKey();
   if (e.key === "h" || e.key === "H") hihat();
+  if (e.key === "s" || e.key === "S") snare();
   if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
   if (e.key === "]") costScale *= 1.25;
 });
