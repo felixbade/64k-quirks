@@ -11,6 +11,8 @@ out vec4 fragColor;
 const int RAYS_PER_PIXEL = 5;
 const int STEPS_PER_RAY = 24;
 const int STEPS_PER_RAY_BOUNCE = 12;
+const float SKYBOX_DIST = 5.0;
+const float SURF_DIST = 0.001;
 
 // Box signed distance function.
 float sdBox(vec3 p, vec3 b) {
@@ -50,7 +52,7 @@ float map(vec3 p) {
 }
 
 vec3 calcNormal(vec3 p) {
-  vec2 e = vec2(0.001, 0.0);
+  vec2 e = vec2(SURF_DIST, 0.0);
   return normalize(vec3(
     map(p + e.xyy) - map(p - e.xyy),
     map(p + e.yxy) - map(p - e.yxy),
@@ -58,7 +60,7 @@ vec3 calcNormal(vec3 p) {
   ));
 }
 
-// March a ray up to 100 units. Returns true on hit, writing the distance to t.
+// March a ray up to SKYBOX_DIST units. Returns true on hit, writing the distance to t.
 // steps reports how many map() evaluations the march consumed.
 bool trace(vec3 ro, vec3 rd, out float t, out int steps, int maxSteps) {
   t = 0.0;
@@ -66,9 +68,9 @@ bool trace(vec3 ro, vec3 rd, out float t, out int steps, int maxSteps) {
     steps = i + 1;
     vec3 p = ro + rd * t;
     float d = map(p);
-    if (d < 0.001) return true;
+    if (d < SURF_DIST) return true;
     t += d;
-    if (t > 100.0) break;
+    if (t > SKYBOX_DIST) break;
   }
   return false;
 }
