@@ -63,10 +63,10 @@ function makeDistortionCurve(amount) {
   return curve;
 }
 
-function kick() {
+function kick(when) {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
-  const t = audioCtx.currentTime;
+  const t = when ?? audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = "sine";
@@ -96,10 +96,10 @@ function randomPhaseSaw(ctx, freq, phase) {
   return ctx.createPeriodicWave(real, imag);
 }
 
-function hihat() {
+function hihat(when) {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
-  const t = audioCtx.currentTime;
+  const t = when ?? audioCtx.currentTime;
   const dur = 0.05;
   const n = Math.floor(audioCtx.sampleRate * dur);
   const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
@@ -118,10 +118,10 @@ function hihat() {
   src.stop(t + dur);
 }
 
-function snare() {
+function snare(when) {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
-  const t = audioCtx.currentTime;
+  const t = when ?? audioCtx.currentTime;
   const dur = 0.2;
   const n = Math.floor(audioCtx.sampleRate * dur);
   const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
@@ -150,6 +150,40 @@ function snare() {
   src.stop(t + dur);
   osc.start(t);
   osc.stop(t + 0.12);
+}
+
+// Amen break: 2 bars of 16th notes (32 steps).
+const AMEN_STEPS = 32;
+const AMEN = {
+  kick: new Set([0, 10, 16, 22]),
+  snare: new Set([4, 12, 15, 20, 28, 30]),
+  hat: new Set(Array.from({ length: 16 }, (_, i) => i * 2)),
+};
+const AMEN_BPM = 165;
+
+let amen = null;
+function toggleAmen() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (amen) {
+    clearInterval(amen.timer);
+    amen = null;
+    return;
+  }
+  const stepDur = 60 / AMEN_BPM / 4; // 16th note
+  amen = { step: 0, nextTime: audioCtx.currentTime + 0.05, timer: 0 };
+  const schedule = () => {
+    while (amen.nextTime < audioCtx.currentTime + 0.1) {
+      const s = amen.step % AMEN_STEPS;
+      if (AMEN.kick.has(s)) kick(amen.nextTime);
+      if (AMEN.snare.has(s)) snare(amen.nextTime);
+      if (AMEN.hat.has(s)) hihat(amen.nextTime);
+      amen.nextTime += stepDur;
+      amen.step++;
+    }
+  };
+  schedule();
+  amen.timer = setInterval(schedule, 25);
 }
 
 let bass = null;
@@ -218,6 +252,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "b" || e.key === "B") bassKey();
   if (e.key === "h" || e.key === "H") hihat();
   if (e.key === "s" || e.key === "S") snare();
+  if (e.key === "a" || e.key === "A") toggleAmen();
   if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
   if (e.key === "]") costScale *= 1.25;
 });
