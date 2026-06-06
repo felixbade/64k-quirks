@@ -5,6 +5,7 @@ uniform vec2 u_resolution;
 uniform float u_time;
 uniform int u_debug;       // 0 = normal, 1 = cost heatmap
 uniform float u_costScale; // steps mapped to full heat at this value
+uniform float u_skyFlip;   // +1 normal, -1 flips sky/ground hemispheres
 
 out vec4 fragColor;
 
@@ -85,7 +86,7 @@ bool trace(vec3 ro, vec3 rd, out float t, out int steps, out bool escaped, int m
 
 // Sky light: white in the top hemisphere, black in the bottom.
 vec3 sky(vec3 rd) {
-  return mix(GROUND_COLOR, SKY_COLOR, step(0.0, rd.y)) * BRIGHTNESS;
+  return mix(GROUND_COLOR, SKY_COLOR, step(0.0, rd.y * u_skyFlip)) * BRIGHTNESS;
 }
 
 // Two pseudo-random floats in [0, 1) from a seed (Dave Hoskins hash23).

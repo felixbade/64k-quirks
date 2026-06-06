@@ -5,6 +5,8 @@ import { createPerfOverlay } from "./perf.js";
 const WIDTH = 1920 / 3;
 const HEIGHT = 1080 / 3;
 
+const BPM = 165;
+
 const canvas = document.createElement("canvas");
 canvas.width = WIDTH;
 canvas.height = HEIGHT;
@@ -45,9 +47,11 @@ const uRes = gl.getUniformLocation(prog, "u_resolution");
 const uTime = gl.getUniformLocation(prog, "u_time");
 const uDebug = gl.getUniformLocation(prog, "u_debug");
 const uCostScale = gl.getUniformLocation(prog, "u_costScale");
+const uSkyFlip = gl.getUniformLocation(prog, "u_skyFlip");
 
 let debug = 0;
 let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
+let beatEpoch = null; // audio time of beat 0; null when not running
 
 const perf = createPerfOverlay(gl);
 
@@ -212,7 +216,6 @@ const PLUCK_NOTES = { 2: 220, 6: 261.63, 14: 329.63, 18: 220, 24: 196, 26: 293.6
 const PLUCK_VEL = 0.14;
 const KICK_VEL = { 0: 1, 10: 0.82, 16: 0.92, 22: 0.78, 8: 0.55 };
 const SNARE_VEL = { 4: 1, 12: 0.95, 15: 0.42, 20: 0.88, 28: 0.98, 30: 0.38, 14: 0.5, 26: 0.45, 29: 0.52 };
-const AMEN_BPM = 165;
 
 function makeChopMap() {
   const map = Array.from({ length: AMEN_STEPS }, (_, i) => i);
@@ -244,14 +247,16 @@ function toggleAmen() {
   if (amen) {
     clearInterval(amen.timer);
     amen = null;
+    beatEpoch = null;
     return;
   }
-  const stepDur = 60 / AMEN_BPM / 4;
+  const stepDur = 60 / BPM / 4;
   amen = {
     step: 0,
     nextTime: audioCtx.currentTime + 0.05,
     timer: 0,
   };
+  beatEpoch = amen.nextTime;
   const schedule = () => {
     while (amen.nextTime < audioCtx.currentTime + 0.1) {
       const s = amen.step % AMEN_STEPS;
@@ -324,6 +329,12 @@ function frame(now) {
   gl.uniform1f(uTime, (now - start) / 1000);
   gl.uniform1i(uDebug, debug);
   gl.uniform1f(uCostScale, costScale);
+  let skyFlip = 1.0;
+  if (audioCtx && beatEpoch != null) {
+    const beat = Math.floor((audioCtx.currentTime - beatEpoch) * BPM / 60);
+    skyFlip = beat & 1 ? -1.0 : 1.0;
+  }
+  gl.uniform1f(uSkyFlip, skyFlip);
   perf.beginGpu();
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   perf.endGpu();
