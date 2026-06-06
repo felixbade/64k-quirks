@@ -46,8 +46,5 @@ export const kifs = {
       rotY: s.rotY - dx / 500,
       rotX: s.rotX - dy / 500,
     }),
-    costScale: (s, { dy }) => ({
-      costScale: Math.max(1, s.costScale * Math.exp(-dy / 200)),
-    }),
   },
 };

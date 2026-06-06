@@ -5,14 +5,15 @@ uniform vec2 u_resolution;
 uniform float u_time;
 uniform float u_speed;
 uniform float u_twist;
+uniform float u_rotSpeed;
+uniform float u_blueDotSize;
+uniform float u_pinkDotSize;
+uniform vec3 u_paper;
+uniform vec3 u_pink;
+uniform vec3 u_blue;
 uniform sampler2D u_noise;
 
 out vec4 fragColor;
-
-// Riso ink palette (translucent, multiply onto paper)
-const vec3 PAPER = vec3(0.95, 0.91, 0.80);
-const vec3 INK_PINK = vec3(1.0, 0.27, 0.64);
-const vec3 INK_BLUE = vec3(0.0, 0.42, 0.78);
 
 mat2 rot(float a) {
   float c = cos(a), s = sin(a);
@@ -30,6 +31,7 @@ float halftone(vec2 frag, float angle, float scale, float ink) {
 
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
+  uv = rot(u_time * u_rotSpeed) * uv;
   float a = atan(uv.y, uv.x);
   float r = length(uv);
   float z = 1.0 / max(r, 0.001) + u_time * u_speed;
@@ -50,12 +52,12 @@ void main() {
   // Grid spins CCW at second-hand speed: one revolution per minute.
   vec2 frag = gl_FragCoord.xy - u_resolution.xy * 0.5;
   float spin = u_time * (6.28318530718 / 180.0);
-  float blueDots = halftone(frag + vec2(3.0, -2.0), 0.26 + spin, 8.0, blueInk);
-  float pinkDots = halftone(frag, 1.13 + spin, 12.0, pinkInk);
+  float blueDots = halftone(frag + vec2(3.0, -2.0), 0.26 + spin, u_blueDotSize, blueInk);
+  float pinkDots = halftone(frag, 1.13 + spin, u_pinkDotSize, pinkInk);
 
-  vec3 col = PAPER;
-  col = mix(col, col * INK_BLUE, blueDots);
-  col = mix(col, col * INK_PINK, pinkDots);
+  vec3 col = u_paper;
+  col = mix(col, col * u_blue, blueDots);
+  col = mix(col, col * u_pink, pinkDots);
 
   // Paper grain
   col *= 0.96 + noise * 0.08;
