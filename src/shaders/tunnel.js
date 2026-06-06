@@ -9,9 +9,14 @@ function quantizeTwist(twist) {
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
-// Drag hue (dx) + lightness (dy), scroll saturation (sdy).
-function dragHsl([h, s, l], { dx, dy, sdy }) {
-  return [h + dx / 4, clamp(s - sdy / 50, 0, 100), clamp(l - dy / 10, 0, 100)];
+// Drag hue (dx) + lightness (dy), scroll saturation (sdy). Operates on the
+// flat `${name}Hue|Sat|Lig` params and returns just those three keys.
+function dragHsl(name, s, { dx, dy, sdy }) {
+  return {
+    [`${name}Hue`]: s[`${name}Hue`] + dx / 4,
+    [`${name}Sat`]: clamp(s[`${name}Sat`] - sdy / 50, 0, 100),
+    [`${name}Lig`]: clamp(s[`${name}Lig`] - dy / 10, 0, 100),
+  };
 }
 
 // HSL (h in degrees, s/l in percent) -> linear RGB triple in [0, 1].
@@ -41,23 +46,29 @@ export const tunnel = {
     speed: 1.2,
     twist: 0.375,
     rotSpeed: 0.0,
-    blueDotSize: 8.0,
-    pinkDotSize: 12.0,
-    // Riso ink palette as HSL [hue°, sat%, light%]
-    paper: [44, 60, 87.5],
-    pink: [330, 100, 63.5],
-    blue: [208, 100, 39],
+    spiralDotSize: 8.0,
+    edgeDotSize: 12.0,
+    // Riso ink palette as flat HSL params (hue°, sat%, light%)
+    bgHue: 44,
+    bgSat: 60,
+    bgLig: 87.5,
+    edgeHue: 208,
+    edgeSat: 100,
+    edgeLig: 39,
+    spiralHue: 330,
+    spiralSat: 100,
+    spiralLig: 63.5,
   },
   cacheLocs(gl, program) {
     return {
       u_speed: gl.getUniformLocation(program, "u_speed"),
       u_twist: gl.getUniformLocation(program, "u_twist"),
       u_rotSpeed: gl.getUniformLocation(program, "u_rotSpeed"),
-      u_blueDotSize: gl.getUniformLocation(program, "u_blueDotSize"),
-      u_pinkDotSize: gl.getUniformLocation(program, "u_pinkDotSize"),
-      u_paper: gl.getUniformLocation(program, "u_paper"),
-      u_pink: gl.getUniformLocation(program, "u_pink"),
-      u_blue: gl.getUniformLocation(program, "u_blue"),
+      u_spiralDotSize: gl.getUniformLocation(program, "u_spiralDotSize"),
+      u_edgeDotSize: gl.getUniformLocation(program, "u_edgeDotSize"),
+      u_bg: gl.getUniformLocation(program, "u_bg"),
+      u_edge: gl.getUniformLocation(program, "u_edge"),
+      u_spiral: gl.getUniformLocation(program, "u_spiral"),
       u_noise: gl.getUniformLocation(program, "u_noise"),
     };
   },
@@ -84,11 +95,11 @@ export const tunnel = {
     gl.uniform1f(locs.u_speed, v.speed);
     gl.uniform1f(locs.u_twist, quantizeTwist(v.twist));
     gl.uniform1f(locs.u_rotSpeed, v.rotSpeed);
-    gl.uniform1f(locs.u_blueDotSize, v.blueDotSize);
-    gl.uniform1f(locs.u_pinkDotSize, v.pinkDotSize);
-    gl.uniform3fv(locs.u_paper, hslToRgb(v.paper));
-    gl.uniform3fv(locs.u_pink, hslToRgb(v.pink));
-    gl.uniform3fv(locs.u_blue, hslToRgb(v.blue));
+    gl.uniform1f(locs.u_spiralDotSize, v.spiralDotSize);
+    gl.uniform1f(locs.u_edgeDotSize, v.edgeDotSize);
+    gl.uniform3fv(locs.u_bg, hslToRgb([v.bgHue, v.bgSat, v.bgLig]));
+    gl.uniform3fv(locs.u_edge, hslToRgb([v.edgeHue, v.edgeSat, v.edgeLig]));
+    gl.uniform3fv(locs.u_spiral, hslToRgb([v.spiralHue, v.spiralSat, v.spiralLig]));
   },
   explorerHandlers: {
     speedTwist: (s, { dx, dy }) => ({
@@ -99,11 +110,11 @@ export const tunnel = {
       rotSpeed: s.rotSpeed + dx / 2000,
     }),
     dotSizes: (s, { dx, dy }) => ({
-      blueDotSize: Math.max(1, s.blueDotSize + dx / 100),
-      pinkDotSize: Math.max(1, s.pinkDotSize - dy / 100),
+      spiralDotSize: Math.max(1, s.spiralDotSize + dx / 100),
+      edgeDotSize: Math.max(1, s.edgeDotSize - dy / 100),
     }),
-    paperColor: (s, input) => ({ paper: dragHsl(s.paper, input) }),
-    pinkColor: (s, input) => ({ pink: dragHsl(s.pink, input) }),
-    blueColor: (s, input) => ({ blue: dragHsl(s.blue, input) }),
+    bgColor: (s, input) => dragHsl("bg", s, input),
+    edgeColor: (s, input) => dragHsl("edge", s, input),
+    spiralColor: (s, input) => dragHsl("spiral", s, input),
   },
 };

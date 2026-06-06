@@ -6,11 +6,11 @@ uniform float u_time;
 uniform float u_speed;
 uniform float u_twist;
 uniform float u_rotSpeed;
-uniform float u_blueDotSize;
-uniform float u_pinkDotSize;
-uniform vec3 u_paper;
-uniform vec3 u_pink;
-uniform vec3 u_blue;
+uniform float u_spiralDotSize;
+uniform float u_edgeDotSize;
+uniform vec3 u_bg;
+uniform vec3 u_edge;
+uniform vec3 u_spiral;
 uniform sampler2D u_noise;
 
 out vec4 fragColor;
@@ -44,20 +44,21 @@ void main() {
   tone = clamp(tone, 0.0, 1.0);
   tone = floor(tone * 3.0) / 3.0; // flat poster steps
 
-  // Ink coverage: blue fills the shadows, pink the mid-tones, paper shows in highlights
-  float blueInk = 1.0 - smoothstep(0.0, 0.5, tone);
-  float pinkInk = 1.0 - smoothstep(0.25, 0.85, tone);
+  // Ink coverage: spiral fills the shadows, edge the mid-tones, bg shows in highlights
+  float spiralInk = 1.0 - smoothstep(0.0, 0.5, tone);
+  float edgeInk = 1.0 - smoothstep(0.25, 0.85, tone);
 
   // Slight ink misregistration for that printed charm.
   // Grid spins CCW at second-hand speed: one revolution per minute.
   vec2 frag = gl_FragCoord.xy - u_resolution.xy * 0.5;
   float spin = u_time * (6.28318530718 / 180.0);
-  float blueDots = halftone(frag + vec2(3.0, -2.0), 0.26 + spin, u_blueDotSize, blueInk);
-  float pinkDots = halftone(frag, 1.13 + spin, u_pinkDotSize, pinkInk);
+  float spiralDots = halftone(frag + vec2(3.0, -2.0), 0.26 + spin, u_spiralDotSize, spiralInk);
+  float edgeDots = halftone(frag, 1.13 + spin, u_edgeDotSize, edgeInk);
 
-  vec3 col = u_paper;
-  col = mix(col, col * u_blue, blueDots);
-  col = mix(col, col * u_pink, pinkDots);
+  // Each pixel picks exactly one flat color, no blending between them.
+  vec3 col = u_bg;
+  if (spiralDots > 0.5) col = u_spiral;
+  else if (edgeDots > 0.5) col = u_edge;
 
   // Paper grain
   col *= 0.96 + noise * 0.08;

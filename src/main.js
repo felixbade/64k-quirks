@@ -1,5 +1,5 @@
 import { createRenderer } from "./gl/renderer.js";
-import { SHADERS } from "./shaders/registry.js";
+import { SHADERS, SHADER_IDS } from "./shaders/registry.js";
 import { TIMELINE, sampleTimeline } from "./timeline.js";
 import { createTransport } from "./transport.js";
 import { createEditSession } from "./edit.js";
@@ -14,16 +14,24 @@ const edit = createEditSession(SHADERS, () => sample);
 const perf = createPerfOverlay(renderer.gl);
 
 let debug = 0;
+let shaderOverride = null;
 
 document.body.appendChild(transport.element);
-transport.player.addEventListener("play", () => startMusic(TIMELINE.bpm, transport.currentTime));
+transport.player.addEventListener("play", () => {
+  shaderOverride = null;
+  startMusic(TIMELINE.bpm, transport.currentTime);
+});
 transport.player.addEventListener("pause", stopMusic);
 transport.player.addEventListener("seek", (e) => seekMusic(TIMELINE.bpm, e.detail.time));
 transport.player.addEventListener("end", stopMusic);
 
 function frame(now) {
   const beat = transport.beat();
-  sample = sampleTimeline(TIMELINE, beat);
+  if (transport.paused && shaderOverride !== null) {
+    sample = { shaderId: shaderOverride, values: { ...SHADERS[shaderOverride].defaults } };
+  } else {
+    sample = sampleTimeline(TIMELINE, beat);
+  }
   renderer.setActive(sample.shaderId);
   edit.setActiveShader(sample.shaderId);
   const overrides = edit.getOverridesForShader(sample.shaderId);
@@ -45,4 +53,12 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") perf.toggle();
   if (e.key === "r" || e.key === "R") perf.reset();
   if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+    if (!transport.paused) return;
+    e.preventDefault();
+    const n = SHADER_IDS.length;
+    const base = SHADER_IDS.indexOf(shaderOverride ?? sample.shaderId);
+    const dir = e.key === "ArrowRight" ? 1 : -1;
+    shaderOverride = SHADER_IDS[((base + dir) % n + n) % n];
+  }
 });
