@@ -170,6 +170,21 @@ export const TIMELINE = {
         noiseZ: 0.22000000000002,
       },
     },
+    {
+      beat: 80,
+      shader: "plasma",
+      params: {
+        scale: 3.0,
+        speed: 1.0,
+        warp: 0.6,
+        aHue: 280,
+        aSat: 90,
+        aLig: 55,
+        bHue: 30,
+        bSat: 100,
+        bLig: 60,
+      },
+    },
   ],
 };
 
