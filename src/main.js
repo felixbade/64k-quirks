@@ -48,7 +48,6 @@ const uRes = gl.getUniformLocation(prog, "u_resolution");
 const uTime = gl.getUniformLocation(prog, "u_time");
 const uDebug = gl.getUniformLocation(prog, "u_debug");
 const uCostScale = gl.getUniformLocation(prog, "u_costScale");
-const uSkyFlip = gl.getUniformLocation(prog, "u_skyFlip");
 const uKifsScale = gl.getUniformLocation(prog, "u_kifsScale");
 const uKifsOffset = gl.getUniformLocation(prog, "u_kifsOffset");
 const uKifsSize = gl.getUniformLocation(prog, "u_kifsSize");
@@ -59,14 +58,15 @@ const uKifsRot = gl.getUniformLocation(prog, "u_kifsRot");
 const KIFS_GROUPS = [
   { scale: 1.9, offset: [1.0, 0.85, 0.6], size: 2.0, rotX: 0.5, rotY: 0.8 },
   { scale: 1.9, offset: [1.1, 0.85, 0.6], size: 3.0, rotX: 0.5, rotY: 0.8 },
+  { scale: 1.8073, offset: [3.12, 0.8367, 1.33], size: 1.05, rotX: 0.722, rotY: 0.488 },
 ];
 
 // Beat-timestamp -> KIFS params to switch to at that beat.
 const KIFS_SCHEDULE = {
   0: KIFS_GROUPS[0],
-  4: KIFS_GROUPS[1],
-  8: KIFS_GROUPS[0],
-  12: KIFS_GROUPS[1],
+  8: KIFS_GROUPS[2],
+  16: KIFS_GROUPS[0],
+  24: KIFS_GROUPS[2],
 };
 const KIFS_KEYS = Object.keys(KIFS_SCHEDULE).map(Number).sort((a, b) => a - b);
 
@@ -436,7 +436,6 @@ function frame(now) {
     const t = audioCtx.currentTime;
     while (beat + 1 < bt.length && bt[beat + 1] <= t) beat++;
   }
-  gl.uniform1f(uSkyFlip, beat >= 0 && beat & 1 ? -1.0 : 1.0);
   if (editMode && explorer) applyKifs(varsToKifsGroup(explorer.getCurrentValues()));
   else applyKifs(kifsForBeat(beat));
   perf.beginGpu();
