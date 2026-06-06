@@ -377,7 +377,7 @@ function toggleAmen() {
       else if (Math.random() < 0.06) hihat(when, 0.35);
       if (PLUCK_NOTES[src]) pluck(when, PLUCK_NOTES[src], PLUCK_VEL * (0.9 + Math.random() * 0.2));
 
-      amen.nextTime += stepDur * (1 + (Math.random() - 0.5) * 0.006);
+      amen.nextTime += stepDur;
       amen.step++;
     }
   };
