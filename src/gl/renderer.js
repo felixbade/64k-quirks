@@ -67,6 +67,21 @@ export function createRenderer(registry) {
     gl.viewport(0, 0, w, h);
   }
 
+  // Compile, link and init every shader up front so the timeline never
+  // hitches on a first-time switch. A throwaway draw forces drivers that
+  // defer program finalization until first use.
+  function warmup() {
+    const prev = activeId;
+    for (const id of Object.keys(registry)) {
+      const { program, locs, mod, res } = getProgram(id);
+      gl.useProgram(program);
+      mod.apply(gl, locs, mod.defaults, res);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    gl.finish();
+    activeId = prev;
+  }
+
   function draw(values, time, debug) {
     if (!activeId) throw new Error("no active shader");
     const { program, locs, mod, res } = getProgram(activeId);
@@ -82,6 +97,7 @@ export function createRenderer(registry) {
   return {
     canvas,
     gl,
+    warmup,
     setActive,
     draw,
     getActiveId: () => activeId,

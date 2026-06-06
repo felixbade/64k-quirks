@@ -8,6 +8,7 @@ import { seekMusic, startMusic, stopMusic } from "./audio.js";
 
 const DEMO_BARS = 64;
 const renderer = createRenderer(SHADERS);
+renderer.warmup();
 const transport = createTransport(TIMELINE.bpm, (DEMO_BARS * 4 * 60) / TIMELINE.bpm);
 let sample = sampleTimeline(TIMELINE, 0);
 const edit = createEditSession(SHADERS, () => sample);
