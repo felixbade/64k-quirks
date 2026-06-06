@@ -216,6 +216,58 @@ const grid2 = {
   },
 };
 
+const grid10 = {
+  shader: "grid",
+  params: {
+    ...grid2.params,
+    mirrorAngle1: 1.262,
+    mirrorOffset1: -4.74,
+    centerX: 13.338389340854,
+    centerY: 17.405674942839,
+    zoomLog: -3.663,
+    rotation: 0.70399999999999,
+  },
+};
+
+const grid10b = {
+  shader: "grid",
+  params: {
+    mirrorAngle1: 1.264,
+    mirrorOffset1: -4.71,
+    mirrorAngle2: -2.842,
+    mirrorAngle0: -0.878,
+    mirrorOffset0: -0.96,
+  },
+};
+
+const grid11 = {
+  shader: "grid",
+  params: {
+    ...grid2.params,
+    mirrorAngle0: -1.072,
+    mirrorOffset0: -1.8,
+    noiseStrength: 0.35407314614638,
+    noiseSize: 148.63542279278,
+    noiseDecay: 0.498,
+    noiseZ: -0.34599999999998,
+    centerX: -4.6279431778239,
+    centerY: 8.259149867224,
+    zoomLog: -3.462,
+    rotation: 0.69399999999999,
+    mirrorAngle1: 1.364,
+    mirrorOffset1: -1.98,
+    mirrorAngle2: -2.854,
+    mirrorOffset2: 8.76,
+  },
+};
+
+const grid11b = {
+  shader: "grid",
+  params: {
+    noiseDecay: 0.7,
+  },
+};
+
 const grid3 = {
   shader: "grid",
   params: {
@@ -430,6 +482,50 @@ const grid8b = {
   },
 };
 
+const grid9 = {
+  shader: "grid",
+  params: {
+    mirrorAngle0: -0.856,
+    mirrorOffset0: 5.16,
+    mirrorAngle1: 1.74,
+    mirrorOffset1: -6.15,
+    mirrorAngle2: 1.302,
+    mirrorOffset2: -14.88,
+    lineHue: 21,
+    lineSat: 73,
+    lineLig: 90,
+    bgHue: 207,
+    bgSat: 99,
+    bgLig: 13,
+    gridX: 7.0003406645046,
+    gridY: 1.0900586102585,
+    thickX: 0.22687631533881,
+    thickY: 0.40330972804111,
+    centerX: 1.6592853774536,
+    centerY: -3.9737229633801,
+    zoomLog: -3.558,
+    rotation: 0.27199999999999,
+    noiseStrength: 0.27945376336145,
+    noiseSize: 55.784523856603,
+    noiseDecay: 0.698,
+    noiseZ: 0.35700000000002,
+  },
+};
+
+const grid9b = {
+  shader: "grid",
+  params: {
+    mirrorOffset0: 5.19,
+    mirrorAngle1: 1.738,
+    mirrorAngle2: 1.306,
+    gridX: 6.710464514357,
+    gridY: 1.0870770690719,
+    noiseSize: 56.722056994976,
+    noiseDecay: 0.716,
+    noiseZ: 0.30500000000002,
+  },
+};
+
 const plasma1 = {
   shader: "plasma",
   params: {
@@ -623,21 +719,17 @@ const SEGMENTS = [
   seg("tunnel3", tunnel3, 2),
   seg("kifs3", kifs3, 2),
   seg("grid1", grid1, 4),
-  seg("grid2", grid2, 4),
-  seg("grid1", grid1, 4),
-  seg("plasma1", plasma1, 4),
+  seg("grid9", grid9, 10, grid9b),
+  seg("plasma1", plasma1, 2),
   seg("kifs4", kifs4, 4),
   seg("grid2", grid2, 2),
   seg("kifs5", kifs5, 2),
   seg("kifs4", kifs4, 4),
   seg("kifs1", kifs1, 2),
-  seg("grid2", grid2, 2),
+  seg("grid10", grid10, 2, grid10b),
+  seg("kifs2", kifs2, 6),
+  seg("grid11", grid11, 6, grid11b),
   seg("kifs2", kifs2, 4),
-  seg("grid2", grid2, 2),
-  seg("tunnel3", tunnel3, 2),
-  seg("kifs1", kifs1, 4),
-  seg("grid2", grid2, 2),
-  seg("kifs2", kifs2, 2),
   seg("grid3", grid3, 8),
   seg("plasma1", plasma1, 2),
   seg("grid3", grid3, 6),
