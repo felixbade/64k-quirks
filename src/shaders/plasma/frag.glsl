@@ -8,6 +8,12 @@ uniform vec3 u_colorB;    // second plasma color
 uniform float u_scale;    // spatial frequency
 uniform float u_speed;    // time multiplier
 uniform float u_warp;     // domain-warp strength
+uniform float u_cubeSize;  // glass cube half extent
+uniform float u_ior;       // glass index of refraction
+uniform float u_dispersion;// per-channel IOR spread
+uniform float u_rotSpeed;  // cube rotation speed
+uniform float u_reflect;   // Fresnel reflection strength
+uniform vec3 u_glassTint;  // subtle absorption tint
 
 out vec4 fragColor;
 
@@ -111,17 +117,163 @@ float plasma(vec2 p, float t) {
   return v;
 }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
-
-  float t = u_time * u_speed;
-  vec2 p = uv * u_scale;
-
+vec3 background(vec2 p, float t) {
   float v = plasma(p, t);
   // Smooth oscillation into [0, 1]; the field itself is unbounded but slow.
   float f = 0.5 + 0.5 * sin(v * 0.7);
   f = smoothstep(0.0, 1.0, f);
+  return mix(u_colorA, u_colorB, f);
+}
 
-  vec3 col = mix(u_colorA, u_colorB, f);
+vec3 env(vec3 ro, vec3 rd, float t) {
+  float bgZ = -3.0;
+  // Guard rays that point away from the plane (rd.z >= 0) or graze it
+  // (rd.z ~ 0); both send the plane hit to infinity and alias the plasma.
+  float denom = min(rd.z, -0.15);
+  float h = clamp((bgZ - ro.z) / denom, 0.0, 12.0);
+  vec2 p = (ro + rd * h).xy * u_scale;
+  // Roll spatial frequency down with distance so far samples stop aliasing.
+  p /= 1.0 + h * 0.18;
+  return background(p, t);
+}
+
+mat3 axisAngle(vec3 axis, float a) {
+  axis = normalize(axis);
+  float c = cos(a);
+  float s = sin(a);
+  float oc = 1.0 - c;
+  return mat3(
+    oc * axis.x * axis.x + c,
+    oc * axis.x * axis.y + axis.z * s,
+    oc * axis.z * axis.x - axis.y * s,
+    oc * axis.x * axis.y - axis.z * s,
+    oc * axis.y * axis.y + c,
+    oc * axis.y * axis.z + axis.x * s,
+    oc * axis.z * axis.x + axis.y * s,
+    oc * axis.y * axis.z - axis.x * s,
+    oc * axis.z * axis.z + c
+  );
+}
+
+bool boxIntersect(vec3 ro, vec3 rd, vec3 b, out float tN, out float tF, out vec3 nN, out vec3 nF) {
+  vec3 invRd = vec3(1.0) / rd;
+  vec3 t0 = (-b - ro) * invRd;
+  vec3 t1 = ( b - ro) * invRd;
+  vec3 tn = min(t0, t1);
+  vec3 tf = max(t0, t1);
+
+  tN = max(max(tn.x, tn.y), tn.z);
+  tF = min(min(tf.x, tf.y), tf.z);
+  if (tN > tF || tF < 0.0) return false;
+
+  nN = vec3(0.0);
+  if (tn.x > tn.y && tn.x > tn.z) nN.x = -sign(rd.x);
+  else if (tn.y > tn.z) nN.y = -sign(rd.y);
+  else nN.z = -sign(rd.z);
+
+  nF = vec3(0.0);
+  if (tf.x < tf.y && tf.x < tf.z) nF.x = sign(rd.x);
+  else if (tf.y < tf.z) nF.y = sign(rd.y);
+  else nF.z = sign(rd.z);
+  return true;
+}
+
+float fresnelSchlick(float cosTheta, float f0) {
+  return f0 + (1.0 - f0) * pow(1.0 - clamp(cosTheta, 0.0, 1.0), 5.0);
+}
+
+float iorAtWavelength(float nm) {
+  float l = nm * 0.001; // micrometers
+  float lo = 0.42;
+  float hi = 0.68;
+  float mid = 0.55;
+  float b = u_dispersion / ((1.0 / (lo * lo)) - (1.0 / (hi * hi)));
+  float a = u_ior - b / (mid * mid);
+  return a + b / (l * l);
+}
+
+vec3 spectralWeight(float nm) {
+  float r = exp(-0.5 * pow((nm - 610.0) / 55.0, 2.0));
+  float g = exp(-0.5 * pow((nm - 545.0) / 45.0, 2.0));
+  float b = exp(-0.5 * pow((nm - 460.0) / 38.0, 2.0));
+  return vec3(r, g, b);
+}
+
+vec3 glassRay(vec3 entryLocal, vec3 rdLocal, vec3 nEntryLocal, mat3 rot, float ior, float t) {
+  vec3 insideDir = refract(rdLocal, nEntryLocal, 1.0 / ior);
+  if (length(insideDir) < 0.001) {
+    vec3 worldPos = rot * entryLocal;
+    vec3 worldDir = rot * reflect(rdLocal, nEntryLocal);
+    return env(worldPos, worldDir, t);
+  }
+
+  float tN;
+  float tF;
+  vec3 nN;
+  vec3 nExitLocal;
+  vec3 halfSize = vec3(u_cubeSize);
+  vec3 insideRo = entryLocal + insideDir * 0.001;
+  if (!boxIntersect(insideRo, insideDir, halfSize, tN, tF, nN, nExitLocal)) {
+    vec3 worldPos = rot * entryLocal;
+    vec3 worldDir = rot * insideDir;
+    return env(worldPos, worldDir, t);
+  }
+  vec3 exitLocal = insideRo + insideDir * tF;
+  vec3 outDir = refract(insideDir, -nExitLocal, ior);
+  if (length(outDir) < 0.001) outDir = reflect(insideDir, -nExitLocal);
+
+  vec3 worldPos = rot * exitLocal;
+  vec3 worldDir = rot * outDir;
+  float travel = max(tF, 0.0);
+  return env(worldPos, worldDir, t) * mix(vec3(1.0), u_glassTint, clamp(travel * 0.25, 0.0, 0.6));
+}
+
+vec3 spectralGlass(vec3 entryLocal, vec3 rdLocal, vec3 nEntryLocal, mat3 rot, float t) {
+  vec3 sum = vec3(0.0);
+  vec3 weights = vec3(0.0);
+  for (int i = 0; i < 7; i++) {
+    float nm = mix(430.0, 670.0, float(i) / 6.0);
+    vec3 w = spectralWeight(nm);
+    sum += glassRay(entryLocal, rdLocal, nEntryLocal, rot, iorAtWavelength(nm), t) * w;
+    weights += w;
+  }
+  return sum / max(weights, vec3(0.001));
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
+  float t = u_time * u_speed;
+  vec3 col = background(uv * u_scale, t);
+
+  vec3 ro = vec3(0.0, 0.0, 3.2);
+  vec3 rd = normalize(vec3(uv, -1.7));
+
+  mat3 rot = axisAngle(vec3(0.45, 1.0, 0.25), u_time * u_rotSpeed);
+  mat3 invRot = transpose(rot);
+  vec3 roLocal = invRot * ro;
+  vec3 rdLocal = invRot * rd;
+
+  float tNear;
+  float tFar;
+  vec3 nNearLocal;
+  vec3 nFarLocal;
+  if (boxIntersect(roLocal, rdLocal, vec3(u_cubeSize), tNear, tFar, nNearLocal, nFarLocal)) {
+    vec3 entryLocal = roLocal + rdLocal * tNear;
+    vec3 nNear = normalize(rot * nNearLocal);
+    vec3 entryWorld = rot * entryLocal;
+
+    float f0 = pow((u_ior - 1.0) / (u_ior + 1.0), 2.0);
+    float fresnel = clamp(fresnelSchlick(dot(-rd, nNear), f0) * u_reflect, 0.0, 1.0);
+
+    vec3 reflectCol = env(entryWorld, reflect(rd, nNear), t);
+
+    vec3 refractCol = spectralGlass(entryLocal, rdLocal, nNearLocal, rot, t);
+
+    float edge = pow(1.0 - abs(dot(rd, nNear)), 3.0);
+    vec3 glassCol = mix(refractCol, reflectCol, fresnel);
+    glassCol += edge * 0.18 * u_glassTint;
+
+    col = clamp(glassCol, 0.0, 1.0);
+  }
   fragColor = vec4(col, 1.0);
 }

@@ -66,6 +66,14 @@ export const plasma = {
     bHue: 30,
     bSat: 100,
     bLig: 60,
+    cubeSize: 0.8,
+    ior: 1.45,
+    dispersion: 0.04,
+    rotSpeed: 0.3,
+    reflect: 1.0,
+    tintHue: 190,
+    tintSat: 20,
+    tintLig: 92,
   },
   cacheLocs(gl, program) {
     return {
@@ -74,14 +82,27 @@ export const plasma = {
       u_scale: gl.getUniformLocation(program, "u_scale"),
       u_speed: gl.getUniformLocation(program, "u_speed"),
       u_warp: gl.getUniformLocation(program, "u_warp"),
+      u_cubeSize: gl.getUniformLocation(program, "u_cubeSize"),
+      u_ior: gl.getUniformLocation(program, "u_ior"),
+      u_dispersion: gl.getUniformLocation(program, "u_dispersion"),
+      u_rotSpeed: gl.getUniformLocation(program, "u_rotSpeed"),
+      u_reflect: gl.getUniformLocation(program, "u_reflect"),
+      u_glassTint: gl.getUniformLocation(program, "u_glassTint"),
     };
   },
   apply(gl, locs, v) {
+    const d = plasma.defaults;
     gl.uniform3fv(locs.u_colorA, hslToRgb([v.aHue, v.aSat, v.aLig]));
     gl.uniform3fv(locs.u_colorB, hslToRgb([v.bHue, v.bSat, v.bLig]));
     gl.uniform1f(locs.u_scale, v.scale);
     gl.uniform1f(locs.u_speed, v.speed);
     gl.uniform1f(locs.u_warp, v.warp);
+    gl.uniform1f(locs.u_cubeSize, v.cubeSize ?? d.cubeSize);
+    gl.uniform1f(locs.u_ior, v.ior ?? d.ior);
+    gl.uniform1f(locs.u_dispersion, v.dispersion ?? d.dispersion);
+    gl.uniform1f(locs.u_rotSpeed, v.rotSpeed ?? d.rotSpeed);
+    gl.uniform1f(locs.u_reflect, v.reflect ?? d.reflect);
+    gl.uniform3fv(locs.u_glassTint, hslToRgb([v.tintHue ?? d.tintHue, v.tintSat ?? d.tintSat, v.tintLig ?? d.tintLig]));
   },
   explorerHandlers: {
     // dx: spatial scale (zoom); dy: animation speed.
