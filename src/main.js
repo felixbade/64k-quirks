@@ -28,12 +28,12 @@ transport.player.addEventListener("end", stopMusic);
 function frame(now) {
   const beat = transport.beat();
   if (transport.paused && shaderOverride !== null) {
-    sample = { shaderId: shaderOverride, values: { ...SHADERS[shaderOverride].defaults } };
+    sample = { shaderId: shaderOverride, sceneName: null, values: { ...SHADERS[shaderOverride].defaults } };
   } else {
     sample = sampleTimeline(TIMELINE, beat);
   }
   renderer.setActive(sample.shaderId);
-  edit.setActiveShader(sample.shaderId);
+  edit.setActiveShader(sample.shaderId, sample.sceneName);
   const overrides = edit.getOverridesForShader(sample.shaderId);
 
   perf.beginGpu();

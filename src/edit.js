@@ -39,10 +39,13 @@ export function createEditSession(registry, getSample) {
     handlersByShader[id] = buildShaderHandlers(id, mod);
   }
 
-  let activeShader = getSample().shaderId;
+  const initialSample = getSample();
+  let activeShader = initialSample.shaderId;
+  let activeSceneName = initialSample.sceneName;
 
   const explorer = new PFExplorer({
     handlers: handlersByShader[activeShader] ?? {},
+    title: activeSceneName ? `base: ${activeSceneName}` : null,
     getState: () => {
       const sampled = getSample();
       return { ...defaults, ...prefix(sampled.shaderId, sampled.values) };
@@ -50,10 +53,15 @@ export function createEditSession(registry, getSample) {
   });
 
   return {
-    setActiveShader(shaderId) {
-      if (shaderId === activeShader) return;
-      activeShader = shaderId;
-      explorer.setHandlers(handlersByShader[shaderId] ?? {});
+    setActiveShader(shaderId, sceneName = null) {
+      if (sceneName !== activeSceneName) {
+        activeSceneName = sceneName;
+        explorer.setTitle(sceneName ? `base: ${sceneName}` : null);
+      }
+      if (shaderId !== activeShader) {
+        activeShader = shaderId;
+        explorer.setHandlers(handlersByShader[shaderId] ?? {});
+      }
     },
     getOverridesForShader(shaderId) {
       return stripPrefix(shaderId, explorer.getOverrides());

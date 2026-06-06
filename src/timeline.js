@@ -308,6 +308,15 @@ const mandelbox1 = {
   },
 };
 
+const mandelbox1b = {
+  shader: "mandelbox",
+  params: {
+    cameraX: -0.1188193476876,
+    cameraY: 2.2261679967754,
+    cameraZ: -0.039560999383026,
+  },
+};
+
 const mandelbox2 = {
   shader: "mandelbox",
   params: {
@@ -321,6 +330,16 @@ const mandelbox2 = {
     cameraX: -0.039391615490264,
     cameraY: 2.2233273552822,
     cameraZ: 0.027674277090115,
+    cameraZoom: 1.5674735323327,
+  },
+};
+
+const mandelbox2b = {
+  shader: "mandelbox",
+  params: {
+    cameraX: -0.034220337337266,
+    cameraY: 2.2378666133213,
+    cameraZ: 0.02137779904957,
     cameraZoom: 1.5674735323327,
   },
 };
@@ -342,6 +361,16 @@ const mandelbox3 = {
   },
 };
 
+const mandelbox3b = {
+  shader: "mandelbox",
+  params: {
+    cameraX: -0.043711490657619,
+    cameraY: 2.17137220669,
+    cameraZ: 0.0013585084028432,
+    cameraZoom: 1.5674735323327,
+  },
+};
+
 const mandelbox4 = {
   shader: "mandelbox",
   params: {
@@ -359,105 +388,112 @@ const mandelbox4 = {
   },
 };
 
-const BEATS_PER_SCENE = 2;
+const mandelbox4b = {
+  shader: "mandelbox",
+  params: {
+    cameraX: -0.20412084978166,
+    cameraY: 0.31872131964444,
+    cameraZ: 0.26150195340167,
+    cameraZoom: 1.715089229467,
+  },
+};
 
-const SCENE_ORDER = [
-  tunnel2,
-  tunnel2,
-  tunnel2,
-  tunnel2,
-  tunnel2,
-  tunnel2,
-  tunnel2,
-  kifs4,
-  tunnel3,
-  tunnel3,
-  tunnel3,
-  tunnel3,
-  tunnel3,
-  tunnel3,
-  tunnel3,
-  kifs5,
-  tunnel4,
-  tunnel2,
-  tunnel4,
-  kifs5,
-  tunnel4,
-  tunnel4,
-  tunnel4,
-  kifs5,
-  tunnel3,
-  tunnel4,
-  tunnel2,
-  kifs1,
-  tunnel3,
-  kifs2,
-  tunnel3,
-  kifs3,
-  grid1,
-  grid1,
-  grid2,
-  grid2,
-  grid1,
-  grid1,
-  plasma1,
-  plasma1,
-  kifs4,
-  kifs4,
-  grid2,
-  kifs5,
-  kifs4,
-  kifs4,
-  kifs1,
+function seg(sceneName, from, beats, to = null) {
+  if (to?.shader && to.shader !== from.shader) {
+    throw new Error(`segment interpolation shader mismatch: ${from.shader} -> ${to.shader}`);
+  }
+  return {
+    sceneName,
+    shader: from.shader,
+    beats,
+    params: from.params,
+    endParams: to ? (to.params ?? to) : null,
+  };
+}
 
-  grid2,
-
-  kifs2,
-  kifs2,
-  grid2,
-  tunnel3,
-  kifs1,
-  kifs1,
-
-  grid2,
-  kifs2,
-  grid3,
-  grid3,
-  grid3,
-  grid3,
-  plasma1,
-  grid3,
-  grid3,
-  grid3,
-  grid3,
-  kifs5,
-
-  mandelbox1,
-  mandelbox1,
-  mandelbox2,
-  mandelbox2,
-  mandelbox3,
-  mandelbox3,
-  mandelbox4,
-  mandelbox4,
+const SEGMENTS = [
+  seg("tunnel2", tunnel2, 14),
+  seg("kifs4", kifs4, 2),
+  seg("tunnel3", tunnel3, 14),
+  seg("kifs5", kifs5, 2),
+  seg("tunnel4", tunnel4, 2),
+  seg("tunnel2", tunnel2, 2),
+  seg("tunnel4", tunnel4, 2),
+  seg("kifs5", kifs5, 2),
+  seg("tunnel4", tunnel4, 6),
+  seg("kifs5", kifs5, 2),
+  seg("tunnel3", tunnel3, 2),
+  seg("tunnel4", tunnel4, 2),
+  seg("tunnel2", tunnel2, 2),
+  seg("kifs1", kifs1, 2),
+  seg("tunnel3", tunnel3, 2),
+  seg("kifs2", kifs2, 2),
+  seg("tunnel3", tunnel3, 2),
+  seg("kifs3", kifs3, 2),
+  seg("grid1", grid1, 4),
+  seg("grid2", grid2, 4),
+  seg("grid1", grid1, 4),
+  seg("plasma1", plasma1, 4),
+  seg("kifs4", kifs4, 4),
+  seg("grid2", grid2, 2),
+  seg("kifs5", kifs5, 2),
+  seg("kifs4", kifs4, 4),
+  seg("kifs1", kifs1, 2),
+  seg("grid2", grid2, 2),
+  seg("kifs2", kifs2, 4),
+  seg("grid2", grid2, 2),
+  seg("tunnel3", tunnel3, 2),
+  seg("kifs1", kifs1, 4),
+  seg("grid2", grid2, 2),
+  seg("kifs2", kifs2, 2),
+  seg("grid3", grid3, 8),
+  seg("plasma1", plasma1, 2),
+  seg("grid3", grid3, 6),
+  seg("mandelbox1", mandelbox1, 16, mandelbox1b),
+  seg("mandelbox2", mandelbox2, 16, mandelbox2b),
+  seg("mandelbox3", mandelbox3, 16, mandelbox3b),
+  seg("mandelbox4", mandelbox4, 16, mandelbox4b),
 ];
+
+function buildSegments(list) {
+  let beat = 0;
+  return list.map((s) => {
+    const cue = { ...s, startBeat: beat, endBeat: beat + s.beats };
+    beat += s.beats;
+    return cue;
+  });
+}
+
+function lerpParams(startParams, endParams, t) {
+  const values = { ...startParams };
+  for (const key in values) {
+    const a = values[key];
+    const b = endParams[key] ?? a;
+    values[key] = a + (b - a) * t;
+  }
+  return values;
+}
 
 export const TIMELINE = {
   bpm: 165,
-  cues: SCENE_ORDER.map((scene, i) => ({
-    beat: i * BEATS_PER_SCENE,
-    shader: scene.shader,
-    params: scene.params,
-  })),
+  segments: buildSegments(SEGMENTS),
 };
 
 export function sampleTimeline(timeline, beat) {
-  const cues = timeline.cues;
-  if (!cues.length) throw new Error("timeline has no cues");
-  let cue = cues[0];
-  for (const c of cues) {
-    if (c.beat <= beat) cue = c;
+  const segs = timeline.segments;
+  if (!segs.length) throw new Error("timeline has no segments");
+  let seg = segs[0];
+  for (const s of segs) {
+    if (s.startBeat <= beat) seg = s;
     else break;
   }
-  return { shaderId: cue.shader, values: { ...cue.params } };
+
+  let values = { ...seg.params };
+  if (seg.endParams) {
+    const span = seg.endBeat - seg.startBeat;
+    const t = span > 0 ? Math.min(1, Math.max(0, (beat - seg.startBeat) / span)) : 1;
+    values = lerpParams(seg.params, seg.endParams, t);
+  }
+
+  return { shaderId: seg.shader, sceneName: seg.sceneName, values };
 }
