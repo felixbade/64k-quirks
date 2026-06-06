@@ -13,7 +13,7 @@ uniform float u_rot;        // rotation angle (radians)
 uniform float u_noiseStrength; // displacement amount in uv units
 uniform float u_noiseSize;     // feature size of the largest octave
 uniform float u_noiseDecay;    // amplitude gain per octave
-uniform float u_noiseZ;        // offset along the noise z (time) axis
+uniform float u_noiseZ;        // base offset along the noise z axis (advances at 0.2/s)
 
 out vec4 fragColor;
 
@@ -114,7 +114,7 @@ void main() {
   // Warp the sampling coordinate by animated Perlin noise (third input axis
   // is time). Larger u_noiseSize stretches features; u_noiseDecay sets how
   // fast finer octaves fall off.
-  vec3 np = vec3(uv, u_time + u_noiseZ) / sqrt(max(u_noiseSize, 1e-4));
+  vec3 np = vec3(uv, u_noiseZ + u_time * 0.2) / sqrt(max(u_noiseSize, 1e-4));
   uv += u_noiseStrength * max(sqrt(u_noiseSize), 1e-4) * fbm2(np, u_noiseDecay);
 
   // Coordinates in grid cells; lines sit on integer boundaries.
