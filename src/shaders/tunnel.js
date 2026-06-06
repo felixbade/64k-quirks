@@ -3,7 +3,7 @@ import frag from "./tunnel.frag.glsl";
 export const tunnel = {
   id: "tunnel",
   frag,
-  resolution: [640, 360],
+  resolution: [1920, 1080],
   defaults: {
     speed: 1.2,
     twist: 0.4,

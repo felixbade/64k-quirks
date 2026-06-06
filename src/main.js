@@ -19,8 +19,6 @@ transport.player.addEventListener("pause", stopMusic);
 transport.player.addEventListener("seek", (e) => seekMusic(TIMELINE.bpm, e.detail.time));
 transport.player.addEventListener("end", stopMusic);
 
-transport.play();
-
 function frame(now) {
   const beat = transport.beat();
   const sampled = sampleTimeline(TIMELINE, beat);
