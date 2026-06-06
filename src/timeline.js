@@ -146,6 +146,26 @@ export const TIMELINE = {
         spiralLig: 68,
       },
     },
+    {
+      beat: 72,
+      shader: "grid",
+      params: {
+        gridX: 7.1361715626371,
+        gridY: 1.0671613404635,
+        lineHue: 201,
+        lineSat: 100,
+        lineLig: 80,
+        centerX: -4.906307781381,
+        centerY: 4.1702373314981,
+        zoomLog: -3.636,
+        rotation: 0.62399999999999,
+        thickX: 0.42995438833297,
+        thickY: 0.46074906959401,
+        bgHue: 239,
+        bgSat: 100,
+        bgLig: 13,
+      },
+    },
   ],
 };
 
