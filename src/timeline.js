@@ -291,6 +291,74 @@ const plasma1 = {
   },
 };
 
+const mandelbox1 = {
+  shader: "mandelbox",
+  params: {
+    scale: -0.346,
+    size: 1.25,
+    minRadius: 0.198,
+    fixedRadius: 2.314,
+    foldLimit: 1.444,
+    cameraYaw: 1.04,
+    cameraPitch: 0.29,
+    cameraX: -0.16269176998111,
+    cameraY: 2.2261679967754,
+    cameraZ: 0.035180700311397,
+    cameraZoom: 1.4717690433642,
+  },
+};
+
+const mandelbox2 = {
+  shader: "mandelbox",
+  params: {
+    scale: -0.334,
+    size: 1.31,
+    minRadius: 0.096,
+    fixedRadius: 2.376,
+    foldLimit: 1.444,
+    cameraYaw: 2.454,
+    cameraPitch: 1.06,
+    cameraX: -0.039391615490264,
+    cameraY: 2.2233273552822,
+    cameraZ: 0.027674277090115,
+    cameraZoom: 1.5674735323327,
+  },
+};
+
+const mandelbox3 = {
+  shader: "mandelbox",
+  params: {
+    scale: -0.458,
+    size: 0.79,
+    minRadius: 0.158,
+    fixedRadius: 2.284,
+    foldLimit: 1.476,
+    cameraYaw: -5.312,
+    cameraPitch: 0.536,
+    cameraX: -0.041345564082836,
+    cameraY: 2.1730745435333,
+    cameraZ: 0.0029757751791488,
+    cameraZoom: 1.5674735323327,
+  },
+};
+
+const mandelbox4 = {
+  shader: "mandelbox",
+  params: {
+    scale: -0.288,
+    size: 1.3,
+    minRadius: 0.26,
+    fixedRadius: 1.706,
+    foldLimit: 0.54,
+    cameraYaw: -7.87,
+    cameraPitch: 0.978,
+    cameraX: -0.16688013296363,
+    cameraY: 0.26342920863464,
+    cameraZ: 0.26209853986124,
+    cameraZoom: 1.715089229467,
+  },
+};
+
 const BEATS_PER_SCENE = 2;
 
 const SCENE_ORDER = [
@@ -363,6 +431,15 @@ const SCENE_ORDER = [
   grid3,
   grid3,
   kifs5,
+
+  mandelbox1,
+  mandelbox1,
+  mandelbox2,
+  mandelbox2,
+  mandelbox3,
+  mandelbox3,
+  mandelbox4,
+  mandelbox4,
 ];
 
 export const TIMELINE = {

@@ -14,7 +14,7 @@ uniform float u_camZoom;        // forward scale (effective focal length / fov)
 
 out vec4 fragColor;
 
-const int MB_ITERS = 12;
+const int MB_ITERS = 4;
 const int RAYS_PER_PIXEL = 1;
 const int STEPS_PER_RAY = 64;
 const int STEPS_PER_RAY_BOUNCE = 32;
