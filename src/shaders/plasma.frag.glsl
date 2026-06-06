@@ -6,6 +6,10 @@ uniform float u_time;
 uniform int u_debug;       // 0 = normal, 1 = cost heatmap
 uniform float u_costScale; // steps mapped to full heat at this value
 uniform float u_skyFlip;   // +1 normal, -1 flips sky/ground hemispheres
+uniform float u_kifsScale;  // KIFS fold scale per iteration
+uniform vec3 u_kifsOffset;  // KIFS fold offset
+uniform float u_kifsSize;   // KIFS overall size
+uniform vec2 u_kifsRot;     // KIFS fold rotation (rotX angle, rotY angle)
 
 out vec4 fragColor;
 
@@ -39,10 +43,10 @@ mat3 rotX(float a) {
 // Kaleidoscopic IFS: fold + rotate + scale, 5 iterations.
 // Parameters are eyeballed for an architectural / cathedral look.
 float map(vec3 p) {
-  const float scale = 1.9;
-  const vec3 offset = vec3(1.0, 0.85, 0.6);
-  const float size = 2.0;
-  mat3 rot = rotX(0.5) * rotY(0.8);
+  float scale = u_kifsScale;
+  vec3 offset = u_kifsOffset;
+  float size = u_kifsSize;
+  mat3 rot = rotX(u_kifsRot.x) * rotY(u_kifsRot.y);
 
   p /= size;
 

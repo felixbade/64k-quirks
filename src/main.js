@@ -48,6 +48,43 @@ const uTime = gl.getUniformLocation(prog, "u_time");
 const uDebug = gl.getUniformLocation(prog, "u_debug");
 const uCostScale = gl.getUniformLocation(prog, "u_costScale");
 const uSkyFlip = gl.getUniformLocation(prog, "u_skyFlip");
+const uKifsScale = gl.getUniformLocation(prog, "u_kifsScale");
+const uKifsOffset = gl.getUniformLocation(prog, "u_kifsOffset");
+const uKifsSize = gl.getUniformLocation(prog, "u_kifsSize");
+const uKifsRot = gl.getUniformLocation(prog, "u_kifsRot");
+
+// KIFS parameter groups. Group 0 is the original hand-tuned look; the rest are
+// hardcoded so they can be edited by hand.
+const KIFS_GROUPS = [
+  { scale: 1.9, offset: [1.0, 0.85, 0.6], size: 2.0, rotX: 0.5, rotY: 0.8 },
+  { scale: 1.9, offset: [1.1, 0.85, 0.6], size: 3.0, rotX: 0.5, rotY: 0.8 },
+];
+
+// Beat-timestamp -> KIFS params to switch to at that beat.
+const KIFS_SCHEDULE = {
+  0: KIFS_GROUPS[0],
+  4: KIFS_GROUPS[1],
+  8: KIFS_GROUPS[0],
+  12: KIFS_GROUPS[1],
+};
+const KIFS_KEYS = Object.keys(KIFS_SCHEDULE).map(Number).sort((a, b) => a - b);
+
+function kifsForBeat(beat) {
+  let g = KIFS_GROUPS[0];
+  if (beat < 0) return g;
+  for (const k of KIFS_KEYS) {
+    if (k <= beat) g = KIFS_SCHEDULE[k];
+    else break;
+  }
+  return g;
+}
+
+function applyKifs(g) {
+  gl.uniform1f(uKifsScale, g.scale);
+  gl.uniform3f(uKifsOffset, g.offset[0], g.offset[1], g.offset[2]);
+  gl.uniform1f(uKifsSize, g.size);
+  gl.uniform2f(uKifsRot, g.rotX, g.rotY);
+}
 
 let debug = 0;
 let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
@@ -329,12 +366,12 @@ function frame(now) {
   gl.uniform1f(uTime, (now - start) / 1000);
   gl.uniform1i(uDebug, debug);
   gl.uniform1f(uCostScale, costScale);
-  let skyFlip = 1.0;
+  let beat = -1;
   if (audioCtx && beatEpoch != null) {
-    const beat = Math.floor((audioCtx.currentTime - beatEpoch) * BPM / 60);
-    skyFlip = beat & 1 ? -1.0 : 1.0;
+    beat = Math.floor((audioCtx.currentTime - beatEpoch) * BPM / 60);
   }
-  gl.uniform1f(uSkyFlip, skyFlip);
+  gl.uniform1f(uSkyFlip, beat >= 0 && beat & 1 ? -1.0 : 1.0);
+  applyKifs(kifsForBeat(beat));
   perf.beginGpu();
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   perf.endGpu();
