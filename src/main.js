@@ -59,13 +59,14 @@ const KIFS_GROUPS = [
   { scale: 1.9, offset: [1.0, 0.85, 0.6], size: 2.0, rotX: 0.5, rotY: 0.8 },
   { scale: 1.9, offset: [1.1, 0.85, 0.6], size: 3.0, rotX: 0.5, rotY: 0.8 },
   { scale: 1.8073, offset: [3.12, 0.8367, 1.33], size: 1.05, rotX: 0.722, rotY: 0.488 },
+  { scale: 1.3282, offset: [1.86, 1.43, 0.0867], size: 0.97, rotX: 0.752, rotY: 0.656 },
 ];
 
 // Beat-timestamp -> KIFS params to switch to at that beat.
 const KIFS_SCHEDULE = {
   0: KIFS_GROUPS[0],
   8: KIFS_GROUPS[2],
-  16: KIFS_GROUPS[0],
+  16: KIFS_GROUPS[3],
   24: KIFS_GROUPS[2],
 };
 const KIFS_KEYS = Object.keys(KIFS_SCHEDULE).map(Number).sort((a, b) => a - b);
