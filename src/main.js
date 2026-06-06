@@ -88,7 +88,6 @@ function applyKifs(g) {
 
 let debug = 0;
 let costScale = 360; // 5 rays * (48 primary + 24 bounce); tune with [ and ]
-let beatEpoch = null; // audio time of beat 0; null when not running
 
 const perf = createPerfOverlay(gl);
 
@@ -284,7 +283,6 @@ function toggleAmen() {
   if (amen) {
     clearInterval(amen.timer);
     amen = null;
-    beatEpoch = null;
     return;
   }
   const stepDur = 60 / BPM / 4;
@@ -292,11 +290,12 @@ function toggleAmen() {
     step: 0,
     nextTime: audioCtx.currentTime + 0.05,
     timer: 0,
+    beatTimes: [], // audio time of each beat (every 4 steps), follows tempo drift
   };
-  beatEpoch = amen.nextTime;
   const schedule = () => {
     while (amen.nextTime < audioCtx.currentTime + 0.1) {
       const s = amen.step % AMEN_STEPS;
+      if (amen.step % 4 === 0) amen.beatTimes.push(amen.nextTime);
       const src = s;
       const pat = Math.floor(amen.step / AMEN_STEPS) % 4 === 3 ? AMEN_FILL : AMEN;
       const loopPhase = s / AMEN_STEPS;
@@ -367,8 +366,10 @@ function frame(now) {
   gl.uniform1i(uDebug, debug);
   gl.uniform1f(uCostScale, costScale);
   let beat = -1;
-  if (audioCtx && beatEpoch != null) {
-    beat = Math.floor((audioCtx.currentTime - beatEpoch) * BPM / 60);
+  if (audioCtx && amen) {
+    const bt = amen.beatTimes;
+    const t = audioCtx.currentTime;
+    while (beat + 1 < bt.length && bt[beat + 1] <= t) beat++;
   }
   gl.uniform1f(uSkyFlip, beat >= 0 && beat & 1 ? -1.0 : 1.0);
   applyKifs(kifsForBeat(beat));
