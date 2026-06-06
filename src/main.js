@@ -1,5 +1,5 @@
 import { createRenderer } from "./gl/renderer.js";
-import { SHADERS, SHADER_IDS } from "./shaders/registry.js";
+import { SHADERS } from "./shaders/registry.js";
 import { TIMELINE, sampleTimeline } from "./timeline.js";
 import { createTransport } from "./transport.js";
 import { createEditSession } from "./edit.js";
@@ -9,7 +9,8 @@ import { seekMusic, startMusic, stopMusic } from "./audio.js";
 const DEMO_BARS = 64;
 const renderer = createRenderer(SHADERS);
 const transport = createTransport(TIMELINE.bpm, (DEMO_BARS * 4 * 60) / TIMELINE.bpm);
-const edit = createEditSession(SHADERS, renderer, SHADER_IDS);
+let sample = sampleTimeline(TIMELINE, 0);
+const edit = createEditSession(SHADERS, () => sample);
 const perf = createPerfOverlay(renderer.gl);
 
 let debug = 0;
@@ -22,23 +23,12 @@ transport.player.addEventListener("end", stopMusic);
 
 function frame(now) {
   const beat = transport.beat();
-  const sampled = sampleTimeline(TIMELINE, beat);
-  let shaderId;
-  let values;
-
-  if (edit.isOn()) {
-    shaderId = edit.activeShaderId();
-    renderer.setActive(shaderId);
-    values = edit.getValuesForActiveShader();
-  } else {
-    shaderId = sampled.shaderId;
-    renderer.setActive(shaderId);
-    values = sampled.values;
-    edit.syncShaderIndexTo(shaderId);
-  }
+  sample = sampleTimeline(TIMELINE, beat);
+  renderer.setActive(sample.shaderId);
+  const overrides = edit.getOverridesForShader(sample.shaderId);
 
   perf.beginGpu();
-  renderer.draw(values, transport.currentTime, debug);
+  renderer.draw({ ...sample.values, ...overrides }, transport.currentTime, debug);
   perf.endGpu();
   perf.update(now);
   requestAnimationFrame(frame);
@@ -54,5 +44,4 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") perf.toggle();
   if (e.key === "r" || e.key === "R") perf.reset();
   if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
-  if (e.key === "m" || e.key === "M") edit.toggle(!edit.isOn());
 });

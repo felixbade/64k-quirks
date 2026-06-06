@@ -1,31 +1,9 @@
 import { PFExplorer } from "../../parameter-flow/src/pfExplorer.ts";
 
-function buildUnion(registry) {
-  const variables = {};
-  const handlers = {};
-
-  for (const [id, mod] of Object.entries(registry)) {
-    for (const [k, v] of Object.entries(mod.defaults)) {
-      variables[`${id}.${k}`] = v;
-    }
-    for (const [name, fn] of Object.entries(mod.explorerHandlers)) {
-      handlers[`${id}.${name}`] = (state, input) => {
-        const local = {};
-        const prefix = `${id}.`;
-        for (const [k, v] of Object.entries(state)) {
-          if (k.startsWith(prefix)) local[k.slice(prefix.length)] = v;
-        }
-        const delta = fn(local, input);
-        const out = {};
-        for (const [k, v] of Object.entries(delta)) {
-          out[`${id}.${k}`] = v;
-        }
-        return out;
-      };
-    }
-  }
-
-  return { variables, handlers };
+function prefix(id, values) {
+  const out = {};
+  for (const [k, v] of Object.entries(values)) out[`${id}.${k}`] = v;
+  return out;
 }
 
 function stripPrefix(id, values) {
@@ -37,77 +15,43 @@ function stripPrefix(id, values) {
   return local;
 }
 
-export function createEditSession(registry, renderer, shaderIds) {
-  let editMode = false;
-  let explorer = null;
-  let shaderIndex = 0;
-  let keyHandler = null;
-
-  function activeShaderId() {
-    return shaderIds[shaderIndex];
+function buildDefaults(registry) {
+  const out = {};
+  for (const [id, mod] of Object.entries(registry)) {
+    Object.assign(out, prefix(id, mod.defaults));
   }
+  return out;
+}
 
-  function rotateShader(dir) {
-    shaderIndex = (shaderIndex + dir + shaderIds.length) % shaderIds.length;
-    const id = activeShaderId();
-    renderer.setActive(id);
-    console.log("edit shader:", id);
-  }
-
-  function syncShaderIndexTo(id) {
-    const i = shaderIds.indexOf(id);
-    if (i >= 0) shaderIndex = i;
-  }
-
-  function toggle(on) {
-    if (on === editMode) return;
-    editMode = on;
-    if (editMode) {
-      const { variables, handlers } = buildUnion(registry);
-      explorer = new PFExplorer({
-        duration: 0,
-        clipboard: true,
-        variables,
-        handlers,
-      });
-      renderer.setActive(activeShaderId());
-      keyHandler = (e) => {
-        if (e.key === "ArrowLeft") {
-          e.preventDefault();
-          rotateShader(-1);
-        } else if (e.key === "ArrowRight") {
-          e.preventDefault();
-          rotateShader(1);
-        }
-      };
-      window.addEventListener("keydown", keyHandler);
-      console.log(
-        "edit on — Left/Right: shader, Enter: lock, 1-9: handler, E/I: clipboard, Backspace: reset, m: exit",
-      );
-    } else {
-      if (document.pointerLockElement) document.exitPointerLock();
-      if (keyHandler) {
-        window.removeEventListener("keydown", keyHandler);
-        keyHandler = null;
-      }
-      explorer?.destroy();
-      explorer = null;
-      console.log("edit off");
+function buildHandlers(registry) {
+  const handlers = {};
+  for (const [id, mod] of Object.entries(registry)) {
+    for (const [name, fn] of Object.entries(mod.explorerHandlers)) {
+      handlers[`${id}.${name}`] = (state, input) =>
+        prefix(id, fn(stripPrefix(id, state), input));
     }
   }
+  return handlers;
+}
+
+export function createEditSession(registry, getSample) {
+  const defaults = buildDefaults(registry);
+  const handlers = buildHandlers(registry);
+
+  const explorer = new PFExplorer({
+    handlers,
+    getState: () => {
+      const sampled = getSample();
+      return { ...defaults, ...prefix(sampled.shaderId, sampled.values) };
+    },
+  });
 
   return {
-    isOn: () => editMode,
-    toggle,
-    rotateShader,
-    syncShaderIndexTo,
-    activeShaderId,
-    getValuesForActiveShader() {
-      if (!explorer) return null;
-      return stripPrefix(activeShaderId(), explorer.getCurrentValues());
+    getOverridesForShader(shaderId) {
+      return stripPrefix(shaderId, explorer.getOverrides());
     },
     destroy() {
-      toggle(false);
+      explorer.destroy();
     },
   };
 }
