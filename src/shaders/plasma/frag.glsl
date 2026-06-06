@@ -136,7 +136,7 @@ vec3 background(vec2 p, float t) {
 }
 
 vec3 env(vec3 ro, vec3 rd, float t) {
-  float bgZ = -3.0;
+  float bgZ = -2.5;
   // Guard rays that point away from the plane (rd.z >= 0) or graze it
   // (rd.z ~ 0); both send the plane hit to infinity and alias the plasma.
   float denom = min(rd.z, -0.15);
