@@ -10,8 +10,8 @@ uniform vec2 u_gridThick;   // line thickness in uv units, per axis (x, y)
 uniform vec2 u_center;      // pan offset
 uniform float u_zoom;       // zoom factor
 uniform float u_rot;        // rotation angle (radians)
-uniform float u_mirrorAngle;  // mirror orientation (radians); rotates the mirror line
-uniform float u_mirrorOffset; // mirror displacement from origin along its normal
+uniform float u_mirrorAngle[3];  // mirror orientations (radians); rotate each mirror line
+uniform float u_mirrorOffset[3]; // mirror displacements from origin along their normals
 uniform float u_noiseStrength; // displacement amount in uv units
 uniform float u_noiseSize;     // feature size of the largest octave
 uniform float u_noiseDecay;    // amplitude gain per octave
@@ -113,12 +113,23 @@ void main() {
   uv = mat2(c, -s, s, c) * uv;
   uv += u_center;
 
-  // Mirror: fold the half-plane on the positive-normal side of the mirror line
-  // onto the other side. The line has normal n = (cos, sin) of u_mirrorAngle and
-  // sits u_mirrorOffset from the origin along that normal. Happens before noise.
-  vec2 mn = vec2(cos(u_mirrorAngle), sin(u_mirrorAngle));
-  float msd = dot(uv, mn) - u_mirrorOffset;
-  uv -= 2.0 * max(msd, 0.0) * mn;
+  // Mirrors: three lines that fold off each other (kaleidoscope). Each line i
+  // has normal n = (cos, sin) of u_mirrorAngle[i] and sits u_mirrorOffset[i]
+  // from the origin along that normal. We repeatedly fold the point across any
+  // mirror it lies on the positive-normal side of until it settles inside all
+  // of them, capped at 100 iterations. Happens before noise.
+  for (int iter = 0; iter < 100; iter++) {
+    bool folded = false;
+    for (int i = 0; i < 3; i++) {
+      vec2 mn = vec2(cos(u_mirrorAngle[i]), sin(u_mirrorAngle[i]));
+      float msd = dot(uv, mn) - u_mirrorOffset[i];
+      if (msd > 0.0) {
+        uv -= 2.0 * msd * mn;
+        folded = true;
+      }
+    }
+    if (!folded) break;
+  }
 
   // Warp the sampling coordinate by animated Perlin noise (third input axis
   // is time). Larger u_noiseSize stretches features; u_noiseDecay sets how
