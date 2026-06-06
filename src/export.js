@@ -11,10 +11,10 @@ renderer.warmup();
 let startAt = 0;
 let playing = false;
 
-const overlay = document.createElement("button");
-overlay.textContent = "start";
+const overlay = document.createElement("div");
+overlay.innerHTML = "f: fullscreen<br>space: play";
 overlay.style.cssText =
-  "position:fixed;inset:0;border:0;background:#000;color:#fff;font:32px monospace;cursor:pointer;z-index:2";
+  "position:fixed;inset:0;display:grid;place-items:center;background:#000;color:#fff;font:32px monospace;text-align:center;z-index:2";
 document.body.appendChild(overlay);
 
 function currentTime(now) {
@@ -46,9 +46,9 @@ function start() {
   requestAnimationFrame(frame);
 }
 
-overlay.addEventListener("click", start, { once: true });
 window.addEventListener("keydown", (e) => {
-  if (!playing) {
+  if (e.code === "Space" && !playing) {
+    e.preventDefault();
     start();
     return;
   }
