@@ -1,5 +1,5 @@
-import frag from "./tunnel.frag.glsl";
-import { generateNoiseData } from "./tunnel-noise.js";
+import frag from "./frag.glsl";
+import { generateNoiseData } from "./noise.js";
 
 const TWIST_STEP = 1 / 8;
 

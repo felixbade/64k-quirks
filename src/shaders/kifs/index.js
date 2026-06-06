@@ -1,4 +1,4 @@
-import frag from "./kifs.frag.glsl";
+import frag from "./frag.glsl";
 
 export const kifs = {
   id: "kifs",

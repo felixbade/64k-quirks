@@ -1,4 +1,4 @@
-import vertSrc from "../shaders/fullscreen.vert.glsl";
+import vertSrc from "./fullscreen.vert.glsl";
 
 export function createRenderer(registry) {
   const canvas = document.createElement("canvas");

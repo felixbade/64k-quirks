@@ -1,5 +1,5 @@
 import { createRenderer } from "./gl/renderer.js";
-import { SHADERS, SHADER_IDS } from "./shaders/registry.js";
+import { SHADERS, SHADER_IDS } from "./shaders/index.js";
 import { TIMELINE, sampleTimeline } from "./timeline.js";
 import { createTransport } from "./transport.js";
 import { createEditSession } from "./edit.js";
