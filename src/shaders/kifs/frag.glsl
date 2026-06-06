@@ -3,8 +3,6 @@ precision highp float;
 
 uniform vec2 u_resolution;
 uniform float u_time;
-uniform int u_debug;       // 0 = normal, 1 = cost heatmap
-uniform float u_costScale; // steps mapped to full heat at this value
 uniform float u_kifsScale;  // KIFS fold scale per iteration
 uniform vec3 u_kifsOffset;  // KIFS fold offset
 uniform float u_kifsSize;   // KIFS overall size
@@ -70,14 +68,12 @@ vec3 calcNormal(vec3 p) {
 }
 
 // March a ray up to SKYBOX_DIST units. Returns true on hit, writing the distance to t.
-// steps reports how many map() evaluations the march consumed.
 // escaped is set when the ray exited past SKYBOX_DIST; a false miss means the
 // step budget ran out while still inside the scene.
-bool trace(vec3 ro, vec3 rd, out float t, out int steps, out bool escaped, int maxSteps) {
+bool trace(vec3 ro, vec3 rd, out float t, out bool escaped, int maxSteps) {
   t = 0.0;
   escaped = false;
   for (int i = 0; i < maxSteps; i++) {
-    steps = i + 1;
     vec3 p = ro + rd * t;
     float d = map(p);
     if (d < SURF_DIST) return true;
@@ -112,13 +108,10 @@ vec3 randomHemisphereDir(vec3 n, vec3 seed) {
 
 // Light value for a ray. Misses see the sky. Hits bounce once in a random
 // hemisphere direction: black if it hits the object again, sky color if it escapes.
-// cost accumulates the total march steps spent on this ray.
-vec3 light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
+vec3 light(vec3 ro, vec3 rd, vec3 seed) {
   float t;
-  int steps;
   bool escaped;
-  bool hit = trace(ro, rd, t, steps, escaped, STEPS_PER_RAY);
-  cost += steps;
+  bool hit = trace(ro, rd, t, escaped, STEPS_PER_RAY);
   if (!hit && escaped) {
     return sky(rd);
   }
@@ -144,10 +137,8 @@ vec3 light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
     }
 
     float tb;
-    int stepsb;
     bool escapedb;
-    bool hitb = trace(p + n * 0.01, dir, tb, stepsb, escapedb, STEPS_PER_RAY_BOUNCE);
-    cost += stepsb;
+    bool hitb = trace(p + n * 0.01, dir, tb, escapedb, STEPS_PER_RAY_BOUNCE);
 
     // A clean escape reaches the sky and ends the path.
     if (escapedb) {
@@ -164,12 +155,6 @@ vec3 light(vec3 ro, vec3 rd, vec3 seed, inout int cost) {
   return GROUND_COLOR * BRIGHTNESS;
 }
 
-// Cheap black -> red -> yellow -> white heat ramp for cost visualization.
-vec3 heat(float x) {
-  x = clamp(x, 0.0, 1.0);
-  return clamp(vec3(x * 3.0, x * 3.0 - 1.0, x * 3.0 - 2.0), 0.0, 1.0);
-}
-
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
 
@@ -183,17 +168,11 @@ void main() {
   vec3 rd = normalize(uv.x * right + uv.y * up + 1.5 * fwd);
 
   vec3 l = vec3(0.0);
-  int cost = 0;
   for (int i = 0; i < RAYS_PER_PIXEL; i++) {
     vec3 seed = vec3(gl_FragCoord.xy, u_time + float(i) * 1.618);
-    l += light(ro, rd, seed, cost);
+    l += light(ro, rd, seed);
   }
   l /= float(RAYS_PER_PIXEL);
-
-  if (u_debug == 1) {
-    fragColor = vec4(heat(float(cost) / u_costScale), 1.0);
-    return;
-  }
 
   vec3 col = l;
 

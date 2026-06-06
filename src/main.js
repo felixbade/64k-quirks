@@ -14,7 +14,6 @@ let sample = sampleTimeline(TIMELINE, 0);
 const edit = createEditSession(SHADERS, () => sample);
 const perf = createPerfOverlay(renderer.gl);
 
-let debug = 0;
 let shaderOverride = null;
 
 document.body.appendChild(transport.element);
@@ -38,7 +37,7 @@ function frame(now) {
   const overrides = edit.getOverridesForShader(sample.shaderId);
 
   perf.beginGpu();
-  renderer.draw({ ...sample.values, ...overrides }, transport.currentTime, debug);
+  renderer.draw({ ...sample.values, ...overrides }, transport.currentTime);
   perf.endGpu();
   perf.update(now);
   requestAnimationFrame(frame);
@@ -53,7 +52,6 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "p" || e.key === "P") perf.toggle();
   if (e.key === "r" || e.key === "R") perf.reset();
-  if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
     if (!transport.paused) return;
     e.preventDefault();

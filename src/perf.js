@@ -24,12 +24,13 @@ export function createPerfOverlay(gl) {
   let sumGpu = 0;
   let gpuSampleCount = 0;
 
-  let visible = true;
+  let visible = false;
   let lastFrameTime = performance.now();
   let fps = 0;
 
   const W = 280;
   const H = 155;
+  overlay.style.display = "none";
 
   function beginGpu() {
     if (ext) {

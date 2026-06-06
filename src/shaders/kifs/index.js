@@ -12,11 +12,9 @@ export const kifs = {
     offsetZ: 0.6,
     rotX: 0.5,
     rotY: 0.8,
-    costScale: 360,
   },
   cacheLocs(gl, program) {
     return {
-      u_costScale: gl.getUniformLocation(program, "u_costScale"),
       u_kifsScale: gl.getUniformLocation(program, "u_kifsScale"),
       u_kifsOffset: gl.getUniformLocation(program, "u_kifsOffset"),
       u_kifsSize: gl.getUniformLocation(program, "u_kifsSize"),
@@ -24,7 +22,6 @@ export const kifs = {
     };
   },
   apply(gl, locs, v) {
-    gl.uniform1f(locs.u_costScale, v.costScale);
     gl.uniform1f(locs.u_kifsScale, v.scale);
     gl.uniform3f(locs.u_kifsOffset, v.offsetX, v.offsetY, v.offsetZ);
     gl.uniform1f(locs.u_kifsSize, v.size);
