@@ -4,7 +4,7 @@ import { TIMELINE, sampleTimeline } from "./timeline.js";
 import { createTransport } from "./transport.js";
 import { createEditSession } from "./edit.js";
 import { createPerfOverlay } from "./perf.js";
-import { kick, snare, hihat, bassKey, toggleAmen } from "./audio.js";
+import { seekMusic, startMusic, stopMusic } from "./audio.js";
 
 const renderer = createRenderer(SHADERS);
 const transport = createTransport(TIMELINE.bpm);
@@ -12,6 +12,12 @@ const edit = createEditSession(SHADERS, renderer, SHADER_IDS);
 const perf = createPerfOverlay(renderer.gl);
 
 let debug = 0;
+
+document.body.appendChild(transport.element);
+transport.player.addEventListener("play", () => startMusic(TIMELINE.bpm, transport.currentTime));
+transport.player.addEventListener("pause", stopMusic);
+transport.player.addEventListener("seek", (e) => seekMusic(TIMELINE.bpm, e.detail.time));
+transport.player.addEventListener("end", stopMusic);
 
 transport.play();
 
@@ -49,15 +55,5 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") perf.toggle();
   if (e.key === "r" || e.key === "R") perf.reset();
   if (e.key === "c" || e.key === "C") debug = debug ? 0 : 1;
-  if (e.key === "k" || e.key === "K") kick();
-  if (e.key === "b" || e.key === "B") bassKey();
-  if (e.key === "h" || e.key === "H") hihat();
-  if (e.key === "s" || e.key === "S") snare();
-  if (e.key === "a" || e.key === "A") toggleAmen(TIMELINE.bpm);
   if (e.key === "m" || e.key === "M") edit.toggle(!edit.isOn());
-  if (e.code === "Space") {
-    e.preventDefault();
-    if (transport.paused) transport.play();
-    else transport.pause();
-  }
 });

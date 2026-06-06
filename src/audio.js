@@ -54,18 +54,6 @@ export function kick(when, vel = 1) {
   osc.stop(t + tail);
 }
 
-function randomPhaseSaw(ctx, freq, phase) {
-  const N = Math.min(2048, Math.floor(ctx.sampleRate / 2 / freq));
-  const real = new Float32Array(N);
-  const imag = new Float32Array(N);
-  for (let n = 1; n < N; n++) {
-    const amp = 1 / n;
-    real[n] = amp * Math.sin(n * phase);
-    imag[n] = -amp * Math.cos(n * phase);
-  }
-  return ctx.createPeriodicWave(real, imag);
-}
-
 export function hihat(when, vel = 1) {
   ensureAudio();
   const t = when ?? audioCtx.currentTime;
@@ -171,23 +159,18 @@ function humanizeTime(t, step, stepDur) {
 }
 
 let amen = null;
-let bass = null;
 
-export function toggleAmen(bpm) {
+export function startMusic(bpm, startTime = 0) {
   ensureAudio();
-  if (amen) {
-    clearInterval(amen.timer);
-    amen = null;
-    return;
-  }
+  if (amen) return;
   const stepDur = 60 / bpm / 4;
   amen = {
-    step: 0,
+    step: Math.round(startTime / stepDur),
     nextTime: audioCtx.currentTime + 0.05,
     timer: 0,
   };
   const schedule = () => {
-    while (amen.nextTime < audioCtx.currentTime + 0.1) {
+    while (amen && amen.nextTime < audioCtx.currentTime + 0.1) {
       const s = amen.step % AMEN_STEPS;
       const pat = Math.floor(amen.step / AMEN_STEPS) % 4 === 3 ? AMEN_FILL : AMEN;
       const loopPhase = s / AMEN_STEPS;
@@ -211,40 +194,14 @@ export function toggleAmen(bpm) {
   amen.timer = setInterval(schedule, 25);
 }
 
-export function bassKey() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
-  if (bass) {
-    const FMIN = 30;
-    const FMAX = 60;
-    const factors = [5 / 4];
-    const f = factors[(Math.random() * factors.length) | 0];
-    bass.freq *= f;
-    while (bass.freq > FMAX) bass.freq /= 2;
-    while (bass.freq < FMIN) bass.freq *= 2;
-    const t = audioCtx.currentTime;
-    bass.oscs.forEach((o) => o.frequency.setValueAtTime(bass.freq, t));
-    return;
-  }
-  const t = audioCtx.currentTime;
-  const baseFreq = 50;
-  const VOICES = 30;
-  const DETUNE = 15;
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.0001, t);
-  gain.gain.exponentialRampToValueAtTime(0.8, t + 0.05);
-  gain.connect(audioCtx.destination);
-  const oscs = [];
-  for (let i = 0; i < VOICES; i++) {
-    const o = audioCtx.createOscillator();
-    const vg = audioCtx.createGain();
-    o.setPeriodicWave(randomPhaseSaw(audioCtx, baseFreq, Math.random() * 2 * Math.PI));
-    o.frequency.setValueAtTime(baseFreq, t);
-    o.detune.setValueAtTime((Math.random() * 2 - 1) * DETUNE, t);
-    vg.gain.setValueAtTime(1 / VOICES, t);
-    o.connect(vg).connect(gain);
-    o.start(t);
-    oscs.push(o);
-  }
-  bass = { oscs, gain, freq: baseFreq };
+export function stopMusic() {
+  if (!amen) return;
+  clearInterval(amen.timer);
+  amen = null;
+}
+
+export function seekMusic(bpm, time) {
+  if (!amen) return;
+  stopMusic();
+  startMusic(bpm, time);
 }

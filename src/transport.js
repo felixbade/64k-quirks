@@ -1,7 +1,7 @@
-import { Player } from "../../parameter-flow/src/player.ts";
+import { TimelinePlayer } from "../../parameter-flow/src/timelinePlayer.ts";
 
-export function createTransport(bpm, duration = Infinity) {
-  const player = new Player({ duration });
+export function createTransport(bpm, duration = 60) {
+  const player = new TimelinePlayer({ duration, bpm });
 
   return {
     play: () => player.play(),
@@ -15,5 +15,6 @@ export function createTransport(bpm, duration = Infinity) {
     },
     beat: () => (player.currentTime * bpm) / 60,
     player,
+    element: player.element,
   };
 }
