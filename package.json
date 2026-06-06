@@ -5,7 +5,8 @@
   "description": "1080p WebGL plasma demo, bundled to single file.",
   "scripts": {
     "build": "node build.mjs",
-    "dev": "node build.mjs --serve"
+    "dev": "node build.mjs --serve",
+    "export": "node build.mjs --export"
   },
   "devDependencies": {
     "esbuild": "^0.23.0"

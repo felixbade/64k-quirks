@@ -4,15 +4,58 @@ import { createServer } from "node:http";
 import { join } from "node:path";
 
 const serve = process.argv.includes("--serve");
+const exportMode = process.argv.includes("--export");
 const PORT = Number(process.env.PORT) || 5173;
+const EXPORT_BUDGET = 64 * 1024;
 
 const livereloadClients = new Set();
+
+function stripBlockComments(text) {
+  return text.replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
+function stripLineComment(line) {
+  let out = "";
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === "/" && line[i + 1] === "/") break;
+    out += line[i];
+  }
+  return out;
+}
+
+function minifyGlsl(text) {
+  const parts = [];
+  let body = [];
+  const flushBody = () => {
+    const code = body
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .replace(/\s*([{}()[\];,:+\-*/%=<>])\s*/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (code) parts.push(code);
+    body = [];
+  };
+  for (const rawLine of stripBlockComments(text).split("\n")) {
+    const line = stripLineComment(rawLine).trim();
+    if (!line) continue;
+    if (line.startsWith("#")) {
+      flushBody();
+      parts.push(line);
+    } else {
+      body.push(line);
+    }
+  }
+  flushBody();
+  return parts.join("\n");
+}
 
 const glslLoader = {
   name: "glsl",
   setup(build) {
     build.onLoad({ filter: /\.glsl$/ }, async (args) => {
-      const text = await readFile(args.path, "utf8");
+      const raw = await readFile(args.path, "utf8");
+      const text = exportMode ? minifyGlsl(raw) : raw;
       return { contents: `export default ${JSON.stringify(text)};`, loader: "js" };
     });
   },
@@ -51,9 +94,15 @@ ${livereload}
 
 async function writeHtml(js) {
   const html = makeHtml(js);
+  const outFile = exportMode ? "dist/export.html" : "dist/index.html";
   await mkdir("dist", { recursive: true });
-  await writeFile("dist/index.html", html);
-  console.log("built dist/index.html (" + (html.length / 1024).toFixed(1) + " KB)");
+  await writeFile(outFile, html);
+  const bytes = Buffer.byteLength(html);
+  console.log("built " + outFile + " (" + (bytes / 1024).toFixed(1) + " KB)");
+  if (exportMode && bytes > EXPORT_BUDGET) {
+    console.error("export exceeds 64 KB by " + (bytes - EXPORT_BUDGET) + " bytes");
+    process.exit(1);
+  }
   for (const res of livereloadClients) res.write("data: reload\n\n");
 }
 
@@ -68,9 +117,9 @@ const htmlWriter = {
 };
 
 const buildOpts = {
-  entryPoints: ["src/main.js"],
+  entryPoints: [exportMode ? "src/export.js" : "src/main.js"],
   bundle: true,
-  minify: !serve,
+  minify: !serve || exportMode,
   format: "iife",
   plugins: [glslLoader, htmlWriter],
   write: false,
