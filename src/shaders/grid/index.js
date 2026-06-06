@@ -65,6 +65,9 @@ export const grid = {
     centerY: 0.0,
     zoomLog: 0.0,
     rotation: 0.0,
+    // mirror fold (applied before the noise warp)
+    mirrorAngle: 0.0,
+    mirrorOffset: 0.0,
     // perlin coordinate warp
     noiseStrength: 0.1,
     noiseSize: 1.0,
@@ -87,6 +90,8 @@ export const grid = {
       u_center: gl.getUniformLocation(program, "u_center"),
       u_zoom: gl.getUniformLocation(program, "u_zoom"),
       u_rot: gl.getUniformLocation(program, "u_rot"),
+      u_mirrorAngle: gl.getUniformLocation(program, "u_mirrorAngle"),
+      u_mirrorOffset: gl.getUniformLocation(program, "u_mirrorOffset"),
       u_noiseStrength: gl.getUniformLocation(program, "u_noiseStrength"),
       u_noiseSize: gl.getUniformLocation(program, "u_noiseSize"),
       u_noiseDecay: gl.getUniformLocation(program, "u_noiseDecay"),
@@ -101,6 +106,8 @@ export const grid = {
     gl.uniform2f(locs.u_center, v.centerX, v.centerY);
     gl.uniform1f(locs.u_zoom, Math.pow(2, v.zoomLog));
     gl.uniform1f(locs.u_rot, v.rotation);
+    gl.uniform1f(locs.u_mirrorAngle, v.mirrorAngle);
+    gl.uniform1f(locs.u_mirrorOffset, v.mirrorOffset);
     gl.uniform1f(locs.u_noiseStrength, v.noiseStrength);
     gl.uniform1f(locs.u_noiseSize, v.noiseSize);
     gl.uniform1f(locs.u_noiseDecay, v.noiseDecay);
@@ -137,6 +144,11 @@ export const grid = {
         thickY: Math.max(0.0005, s.thickY * Math.exp(rsdy / 300)),
       };
     },
+    // dx: rotate the mirror line; dy: slide it along its normal from the origin.
+    mirror: (s, { dx, dy }) => ({
+      mirrorAngle: s.mirrorAngle + dx * 0.002,
+      mirrorOffset: s.mirrorOffset + dy * 0.03,
+    }),
     lineColor: (s, input) => dragHsl("line", s, input),
     bgColor: (s, input) => dragHsl("bg", s, input),
     // dx: warp strength; dy: feature size; sdy: per-octave decay; sdx: z offset.
