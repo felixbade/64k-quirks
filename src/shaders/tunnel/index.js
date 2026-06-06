@@ -67,6 +67,11 @@ export const tunnel = {
     speed: 1.2,
     twist: 0.375,
     rotSpeed: 0.0,
+    tightness: 1.0,
+    noiseScale: 0.08,
+    noiseWarp: 4.0,
+    noiseTone: 0.22,
+    noiseGrain: 0.08,
     spiralDotSize: 8.0,
     edgeDotSize: 12.0,
     // Riso ink palette as flat HSL params (hue°, sat%, light%)
@@ -85,6 +90,11 @@ export const tunnel = {
       u_speed: gl.getUniformLocation(program, "u_speed"),
       u_twist: gl.getUniformLocation(program, "u_twist"),
       u_rotSpeed: gl.getUniformLocation(program, "u_rotSpeed"),
+      u_tightness: gl.getUniformLocation(program, "u_tightness"),
+      u_noiseScale: gl.getUniformLocation(program, "u_noiseScale"),
+      u_noiseWarp: gl.getUniformLocation(program, "u_noiseWarp"),
+      u_noiseTone: gl.getUniformLocation(program, "u_noiseTone"),
+      u_noiseGrain: gl.getUniformLocation(program, "u_noiseGrain"),
       u_spiralDotSize: gl.getUniformLocation(program, "u_spiralDotSize"),
       u_edgeDotSize: gl.getUniformLocation(program, "u_edgeDotSize"),
       u_bg: gl.getUniformLocation(program, "u_bg"),
@@ -116,6 +126,11 @@ export const tunnel = {
     gl.uniform1f(locs.u_speed, v.speed);
     gl.uniform1f(locs.u_twist, quantizeTwist(v.twist));
     gl.uniform1f(locs.u_rotSpeed, v.rotSpeed);
+    gl.uniform1f(locs.u_tightness, v.tightness ?? tunnel.defaults.tightness);
+    gl.uniform1f(locs.u_noiseScale, v.noiseScale ?? tunnel.defaults.noiseScale);
+    gl.uniform1f(locs.u_noiseWarp, v.noiseWarp ?? tunnel.defaults.noiseWarp);
+    gl.uniform1f(locs.u_noiseTone, v.noiseTone ?? tunnel.defaults.noiseTone);
+    gl.uniform1f(locs.u_noiseGrain, v.noiseGrain ?? tunnel.defaults.noiseGrain);
     gl.uniform1f(locs.u_spiralDotSize, v.spiralDotSize);
     gl.uniform1f(locs.u_edgeDotSize, v.edgeDotSize);
     gl.uniform3fv(locs.u_bg, hslToRgb([v.bgHue, v.bgSat, v.bgLig]));
@@ -129,6 +144,15 @@ export const tunnel = {
     }),
     rotSpeed: (s, { dx }) => ({
       rotSpeed: s.rotSpeed + dx / 2000,
+    }),
+    tightnessNoise: (s, { dx, dy, sdx, sdy }) => ({
+      tightness: Math.max(0.05, s.tightness + dx / 500),
+      noiseScale: Math.max(0.0, s.noiseScale + dy / 5000),
+      noiseWarp: Math.max(0.0, s.noiseWarp + sdx / 200),
+      noiseTone: Math.max(0.0, s.noiseTone + sdy / 2000),
+    }),
+    noiseGrain: (s, { dy }) => ({
+      noiseGrain: Math.max(0.0, s.noiseGrain - dy / 1000),
     }),
     dotSizes: (s, { dx, dy }) => ({
       spiralDotSize: Math.max(1, s.spiralDotSize + dx / 100),

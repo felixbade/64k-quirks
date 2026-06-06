@@ -6,6 +6,11 @@ uniform float u_time;
 uniform float u_speed;
 uniform float u_twist;
 uniform float u_rotSpeed;
+uniform float u_tightness;
+uniform float u_noiseScale;
+uniform float u_noiseWarp;
+uniform float u_noiseTone;
+uniform float u_noiseGrain;
 uniform float u_spiralDotSize;
 uniform float u_edgeDotSize;
 uniform vec3 u_bg;
@@ -34,13 +39,13 @@ void main() {
   uv = rot(u_time * u_rotSpeed) * uv;
   float a = atan(uv.y, uv.x);
   float r = length(uv);
-  float z = 1.0 / max(r, 0.001) + u_time * u_speed;
-  vec2 noiseUv = vec2(a / 6.28318530718 + 0.5, fract(z * 0.08));
+  float z = u_tightness / max(r, 0.001) + u_time * u_speed;
+  vec2 noiseUv = vec2(a / 6.28318530718 + 0.5, fract(z * u_noiseScale));
   float noise = texture(u_noise, noiseUv).r;
-  float bands = sin(z * 6.0 + a * u_twist * 8.0 + (noise - 0.5) * 4.0);
+  float bands = sin(z * 6.0 + a * u_twist * 8.0 + (noise - 0.5) * u_noiseWarp);
 
   // Single posterized tone: 0 = deep, 1 = bright
-  float tone = 0.5 + 0.5 * bands + (noise - 0.5) * 0.22 + 0.06 * sin(a * 2.0 + z * 0.4);
+  float tone = 0.5 + 0.5 * bands + (noise - 0.5) * u_noiseTone + 0.06 * sin(a * 2.0 + z * 0.4);
   tone = clamp(tone, 0.0, 1.0);
   tone = floor(tone * 3.0) / 3.0; // flat poster steps
 
@@ -61,7 +66,7 @@ void main() {
   else if (edgeDots > 0.5) col = u_edge;
 
   // Paper grain
-  col *= 0.96 + noise * 0.08;
+  col *= (1.0 - u_noiseGrain * 0.5) + noise * u_noiseGrain;
 
   col *= smoothstep(0.0, 0.12, r);
   fragColor = vec4(col, 1.0);

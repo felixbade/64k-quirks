@@ -190,6 +190,61 @@ const tunnel4 = {
   },
 };
 
+const tunnel5 = {
+  shader: "tunnel",
+  params: {
+    ...tunnel3.params,
+    spiralDotSize: 19.78,
+    edgeDotSize: 31.07,
+    tightness: 0.6,
+    noiseScale: 0.075,
+    noiseWarp: 0.2,
+    noiseTone: 0.2,
+    speed: 0.2,
+    twist: 0.125,
+  },
+};
+
+const tunnel5b = {
+  shader: "tunnel",
+  params: {
+    noiseScale: 0.0866,
+    noiseTone: 0.2085,
+  },
+};
+
+const tunnel6 = {
+  shader: "tunnel",
+  params: {
+    ...tunnel3.params,
+    bgHue: 26,
+    bgSat: 93,
+    bgLig: 0,
+    edgeHue: 208,
+    edgeSat: 82,
+    edgeLig: 45,
+    spiralHue: 64,
+    spiralSat: 81,
+    spiralLig: 72,
+    spiralDotSize: 16.28,
+    edgeDotSize: 8,
+    noiseGrain: 0,
+    tightness: 0.42,
+    noiseScale: 0.56559999999999,
+    noiseWarp: 3.225,
+    noiseTone: 0.585,
+    speed: 0.1,
+    twist: 0,
+  },
+};
+
+const tunnel6b = {
+  shader: "tunnel",
+  params: {
+    noiseScale: 0.6,
+  },
+};
+
 const grid1 = {
   shader: "grid",
   params: {
@@ -758,18 +813,16 @@ function seg(sceneName, from, beats, to = null, interpEnd = 1) {
 const SEGMENTS = [
   seg("tunnel2", tunnel2, 14),
   seg("kifs4", kifs4, 2),
-  seg("tunnel3", tunnel3, 14),
+  seg("tunnel5", tunnel5, 14, tunnel5b),
   seg("kifs5", kifs5, 2),
   seg("tunnel4", tunnel4, 2),
   seg("tunnel2", tunnel2, 2),
   seg("tunnel4", tunnel4, 2),
   seg("kifs5", kifs5, 2),
-  seg("tunnel4", tunnel4, 6),
-  seg("kifs5", kifs5, 2),
-  seg("tunnel3", tunnel3, 2),
-  seg("tunnel4", tunnel4, 2),
   seg("tunnel2", tunnel2, 2),
-  seg("kifs1", kifs1, 2),
+  seg("kifs5", kifs5, 4),
+  seg("tunnel6", tunnel6, 6, tunnel6b),
+  seg("kifs1", kifs1, 4),
   seg("tunnel3", tunnel3, 2),
   seg("kifs2", kifs2, 2),
   seg("tunnel3", tunnel3, 2),
