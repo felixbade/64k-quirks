@@ -108,13 +108,22 @@ export const grid = {
         rotation: s.rotation + sdx * 0.002,
       };
     },
-    // dx/dy: cell size per axis; sdx/sdy: line thickness per axis.
-    sizeThickness: (s, { dx, dy, sdx, sdy }) => ({
-      gridX: Math.max(0.005, s.gridX * Math.exp(dx / 500)),
-      gridY: Math.max(0.005, s.gridY * Math.exp(-dy / 500)),
-      thickX: Math.max(0.0005, s.thickX * Math.exp(sdx / 300)),
-      thickY: Math.max(0.0005, s.thickY * Math.exp(-sdy / 300)),
-    }),
+    // dx/dy: cell size per axis; sdx/sdy: line thickness per axis. Inputs are
+    // rotated by `rotation` so dragging aligns with the on-screen grid axes.
+    sizeThickness: (s, { dx, dy, sdx, sdy }) => {
+      const cos = Math.cos(s.rotation);
+      const sin = Math.sin(s.rotation);
+      const rdx = dx * cos - dy * sin;
+      const rdy = dx * sin + dy * cos;
+      const rsdx = sdx * cos - sdy * sin;
+      const rsdy = sdx * sin + sdy * cos;
+      return {
+        gridX: Math.max(0.005, s.gridX * Math.exp(rdx / 500)),
+        gridY: Math.max(0.005, s.gridY * Math.exp(-rdy / 500)),
+        thickX: Math.max(0.0005, s.thickX * Math.exp(-rsdx / 300)),
+        thickY: Math.max(0.0005, s.thickY * Math.exp(rsdy / 300)),
+      };
+    },
     lineColor: (s, input) => dragHsl("line", s, input),
     bgColor: (s, input) => dragHsl("bg", s, input),
   },
