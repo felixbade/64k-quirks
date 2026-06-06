@@ -50,7 +50,8 @@ export function createRenderer(registry) {
       ...mod.cacheLocs(gl, program),
     };
 
-    const entry = { program, locs, mod };
+    const res = mod.init ? mod.init(gl, program, locs) : null;
+    const entry = { program, locs, mod, res };
     programs.set(id, entry);
     return entry;
   }
@@ -68,13 +69,13 @@ export function createRenderer(registry) {
 
   function draw(values, time, debug) {
     if (!activeId) throw new Error("no active shader");
-    const { program, locs, mod } = getProgram(activeId);
+    const { program, locs, mod, res } = getProgram(activeId);
     gl.useProgram(program);
     gl.viewport(0, 0, canvas.width, canvas.height);
     if (locs.u_resolution) gl.uniform2f(locs.u_resolution, canvas.width, canvas.height);
     if (locs.u_time) gl.uniform1f(locs.u_time, time);
     if (locs.u_debug) gl.uniform1i(locs.u_debug, debug);
-    mod.apply(gl, locs, values);
+    mod.apply(gl, locs, values, res);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
