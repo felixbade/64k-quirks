@@ -1,6 +1,7 @@
 import vertSrc from "./shaders/plasma.vert.glsl";
 import fragSrc from "./shaders/plasma.frag.glsl";
 import { createPerfOverlay } from "./perf.js";
+import { PFExplorer } from "../../parameter-flow/src/pfExplorer.ts";
 
 const WIDTH = 1920 / 3;
 const HEIGHT = 1080 / 3;
@@ -84,6 +85,70 @@ function applyKifs(g) {
   gl.uniform3f(uKifsOffset, g.offset[0], g.offset[1], g.offset[2]);
   gl.uniform1f(uKifsSize, g.size);
   gl.uniform2f(uKifsRot, g.rotX, g.rotY);
+}
+
+function kifsGroupToVars(g) {
+  return {
+    kifsScale: g.scale,
+    kifsSize: g.size,
+    kifsOffsetX: g.offset[0],
+    kifsOffsetY: g.offset[1],
+    kifsOffsetZ: g.offset[2],
+    kifsRotX: g.rotX,
+    kifsRotY: g.rotY,
+  };
+}
+
+function varsToKifsGroup(v) {
+  return {
+    scale: v.kifsScale,
+    size: v.kifsSize,
+    offset: [v.kifsOffsetX, v.kifsOffsetY, v.kifsOffsetZ],
+    rotX: v.kifsRotX,
+    rotY: v.kifsRotY,
+  };
+}
+
+function createKifsExplorer(seed) {
+  return new PFExplorer({
+    duration: 0,
+    clipboard: true,
+    variables: kifsGroupToVars(seed),
+    handlers: {
+      scaleSize: (state, { dx, dy }) => ({
+        kifsScale: state.kifsScale * Math.exp(dx / 500),
+        kifsSize: state.kifsSize - dy / 100,
+      }),
+      offsetXY: (state, { dx, dy }) => ({
+        kifsOffsetX: state.kifsOffsetX - dx / 300,
+        kifsOffsetY: state.kifsOffsetY + dy / 300,
+      }),
+      offsetZ: (state, { dy }) => ({
+        kifsOffsetZ: state.kifsOffsetZ + dy / 300,
+      }),
+      rotation: (state, { dx, dy }) => ({
+        kifsRotY: state.kifsRotY - dx / 500,
+        kifsRotX: state.kifsRotX - dy / 500,
+      }),
+    },
+  });
+}
+
+let editMode = false;
+let explorer = null;
+
+function setEditMode(on) {
+  if (on === editMode) return;
+  editMode = on;
+  if (editMode) {
+    explorer = createKifsExplorer(kifsForBeat(-1));
+    console.log("KIFS edit mode on — Enter: lock, 1-4: handler, E/I: clipboard, Backspace: reset, m: exit");
+  } else {
+    if (document.pointerLockElement) document.exitPointerLock();
+    explorer?.destroy();
+    explorer = null;
+    console.log("KIFS edit mode off");
+  }
 }
 
 let debug = 0;
@@ -372,7 +437,8 @@ function frame(now) {
     while (beat + 1 < bt.length && bt[beat + 1] <= t) beat++;
   }
   gl.uniform1f(uSkyFlip, beat >= 0 && beat & 1 ? -1.0 : 1.0);
-  applyKifs(kifsForBeat(beat));
+  if (editMode && explorer) applyKifs(varsToKifsGroup(explorer.getCurrentValues()));
+  else applyKifs(kifsForBeat(beat));
   perf.beginGpu();
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   perf.endGpu();
@@ -396,4 +462,5 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "a" || e.key === "A") toggleAmen();
   if (e.key === "[") costScale = Math.max(1, costScale / 1.25);
   if (e.key === "]") costScale *= 1.25;
+  if (e.key === "m" || e.key === "M") setEditMode(!editMode);
 });
