@@ -25,6 +25,7 @@ function frame(now) {
   const beat = transport.beat();
   sample = sampleTimeline(TIMELINE, beat);
   renderer.setActive(sample.shaderId);
+  edit.setActiveShader(sample.shaderId);
   const overrides = edit.getOverridesForShader(sample.shaderId);
 
   perf.beginGpu();

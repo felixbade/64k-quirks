@@ -23,23 +23,26 @@ function buildDefaults(registry) {
   return out;
 }
 
-function buildHandlers(registry) {
+function buildShaderHandlers(id, mod) {
   const handlers = {};
-  for (const [id, mod] of Object.entries(registry)) {
-    for (const [name, fn] of Object.entries(mod.explorerHandlers)) {
-      handlers[`${id}.${name}`] = (state, input) =>
-        prefix(id, fn(stripPrefix(id, state), input));
-    }
+  for (const [name, fn] of Object.entries(mod.explorerHandlers)) {
+    handlers[`${id}.${name}`] = (state, input) =>
+      prefix(id, fn(stripPrefix(id, state), input));
   }
   return handlers;
 }
 
 export function createEditSession(registry, getSample) {
   const defaults = buildDefaults(registry);
-  const handlers = buildHandlers(registry);
+  const handlersByShader = {};
+  for (const [id, mod] of Object.entries(registry)) {
+    handlersByShader[id] = buildShaderHandlers(id, mod);
+  }
+
+  let activeShader = getSample().shaderId;
 
   const explorer = new PFExplorer({
-    handlers,
+    handlers: handlersByShader[activeShader] ?? {},
     getState: () => {
       const sampled = getSample();
       return { ...defaults, ...prefix(sampled.shaderId, sampled.values) };
@@ -47,6 +50,11 @@ export function createEditSession(registry, getSample) {
   });
 
   return {
+    setActiveShader(shaderId) {
+      if (shaderId === activeShader) return;
+      activeShader = shaderId;
+      explorer.setHandlers(handlersByShader[shaderId] ?? {});
+    },
     getOverridesForShader(shaderId) {
       return stripPrefix(shaderId, explorer.getOverrides());
     },
