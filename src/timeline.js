@@ -276,6 +276,160 @@ const grid4 = {
   },
 };
 
+const grid5 = {
+  shader: "grid",
+  params: {
+    centerX: -13.721922242377,
+    centerY: -4.5688438042485,
+    zoomLog: -4.803,
+    rotation: -0.178,
+    gridX: 1.1832746935849,
+    gridY: 1.1492869054377,
+    thickX: 0.13852102582372,
+    thickY: 0.039169810433867,
+    mirrorAngle0: 2.28,
+    mirrorOffset0: 2.43,
+    lineHue: 23,
+    lineSat: 100,
+    lineLig: 58,
+    mirrorAngle2: -0.54200000000001,
+    mirrorOffset2: -15.6,
+    mirrorAngle1: -0.754,
+    mirrorOffset1: -4.59,
+    bgHue: 0,
+    bgSat: 0,
+    bgLig: 0,
+    noiseStrength: 0.1,
+    noiseSize: 1.0,
+    noiseDecay: 0.5,
+    noiseZ: 0.0,
+  },
+};
+
+const grid5b = {
+  shader: "grid",
+  params: {
+    mirrorAngle2: -0.53600000000001,
+  },
+};
+
+const grid6 = {
+  shader: "grid",
+  params: {
+    gridX: 0.2,
+    gridY: 0.2,
+    thickX: 0.01,
+    thickY: 0.01,
+    noiseStrength: 0.1,
+    noiseSize: 1.0,
+    noiseDecay: 0.5,
+    noiseZ: 0.0,
+    centerX: 45.914147526074,
+    centerY: 43.550709572171,
+    zoomLog: -7.182,
+    rotation: 0.54,
+    mirrorAngle0: 1.832,
+    mirrorOffset0: 7.32,
+    mirrorAngle1: -1.258,
+    mirrorOffset1: -3.21,
+    mirrorAngle2: -1.2031,
+    mirrorOffset2: -12.84,
+    lineHue: 60,
+    lineSat: 97,
+    lineLig: 69,
+    bgHue: 260,
+    bgSat: 63,
+    bgLig: 6,
+  },
+};
+
+const grid6b = {
+  shader: "grid",
+  params: {
+    mirrorAngle0: 1.844,
+  },
+};
+
+const grid7 = {
+  shader: "grid",
+  params: {
+    mirrorAngle0: 2.226,
+    mirrorOffset0: 2.88,
+    mirrorAngle1: -0.76,
+    mirrorOffset1: -4.62,
+    centerX: -2.1660730928909,
+    centerY: -9.828256164902,
+    zoomLog: -2.898,
+    rotation: 1.908,
+    mirrorAngle2: -0.56000000000001,
+    mirrorOffset2: -15.87,
+    bgHue: 14,
+    bgSat: 57,
+    bgLig: 55,
+    lineHue: 335,
+    lineSat: 66,
+    lineLig: 11,
+    gridX: 1.2782947866714,
+    gridY: 1.0599123057921,
+    thickX: 0.056415001094096,
+    thickY: 0.16232750205724,
+    noiseStrength: 0.78459698103184,
+    noiseSize: 168.45466559294,
+    noiseDecay: 0.394,
+    noiseZ: 0.453,
+  },
+};
+
+const grid7b = {
+  shader: "grid",
+  params: {
+    ...grid7.params,
+    mirrorAngle2: -0.56000000000001,
+    mirrorOffset2: -15.57,
+  },
+};
+
+const grid8 = {
+  shader: "grid",
+  params: {
+    gridX: 0.2,
+    gridY: 0.2,
+    thickX: 0.01,
+    thickY: 0.01,
+    noiseStrength: 0.1,
+    noiseSize: 1.0,
+    noiseDecay: 0.5,
+    noiseZ: 0.0,
+    mirrorAngle0: -0.04,
+    mirrorOffset0: -0.029999999999998,
+    mirrorAngle1: -0.928,
+    mirrorOffset1: -0.24000000000001,
+    centerX: -2.7507062310107,
+    centerY: 1.6402993773568,
+    zoomLog: -1.599,
+    rotation: 0.27,
+    mirrorAngle2: -3.774,
+    mirrorOffset2: 0.6,
+    lineHue: 152,
+    lineSat: 57,
+    lineLig: 75,
+    bgHue: 187,
+    bgSat: 100,
+    bgLig: 8,
+  },
+};
+
+const grid8b = {
+  shader: "grid",
+  params: {
+    mirrorAngle0: -0.042,
+    mirrorOffset0: 0.33,
+    mirrorAngle1: -0.92,
+    centerX: -2.600048762354,
+    centerY: 2.1392355160306,
+  },
+};
+
 const plasma1 = {
   shader: "plasma",
   params: {
@@ -347,27 +501,29 @@ const mandelbox2b = {
 const mandelbox3 = {
   shader: "mandelbox",
   params: {
-    scale: -0.458,
-    size: 0.79,
+    scale: -0.462,
+    size: 1.25,
     minRadius: 0.158,
     fixedRadius: 2.284,
     foldLimit: 1.476,
-    cameraYaw: -5.312,
-    cameraPitch: 0.536,
-    cameraX: -0.041345564082836,
-    cameraY: 2.1730745435333,
-    cameraZ: 0.0029757751791488,
-    cameraZoom: 1.5674735323327,
+    cameraYaw: -3.202,
+    cameraPitch: 0.638,
+    cameraX: -0.10976161299763,
+    cameraY: 1.4292550923925,
+    cameraZ: 0.90593679285586,
+    cameraZoom: 1.5784843399248,
   },
 };
 
 const mandelbox3b = {
   shader: "mandelbox",
   params: {
-    cameraX: -0.043711490657619,
-    cameraY: 2.17137220669,
-    cameraZ: 0.0013585084028432,
-    cameraZoom: 1.5674735323327,
+    cameraX: -0.084457015247511,
+    cameraY: 1.7438902176378,
+    cameraZ: 0.48475245631766,
+    cameraYaw: -3.094,
+    cameraPitch: 1.082,
+    cameraZoom: 0.69800089646149,
   },
 };
 
@@ -391,6 +547,7 @@ const mandelbox4 = {
 const mandelbox4b = {
   shader: "mandelbox",
   params: {
+    ...mandelbox4.params,
     cameraX: -0.20412084978166,
     cameraY: 0.31872131964444,
     cameraZ: 0.26150195340167,
@@ -398,7 +555,41 @@ const mandelbox4b = {
   },
 };
 
-function seg(sceneName, from, beats, to = null) {
+const mandelbox4c = {
+  shader: "mandelbox",
+  params: {
+    foldLimit: 0.422,
+  },
+};
+
+const mandelbox5 = {
+  shader: "mandelbox",
+  params: {
+    scale: -1.5,
+    size: 2.5,
+    cameraX: 1.998286353842,
+    cameraY: 4.6976351747296,
+    cameraZ: -0.55087639868441,
+    cameraYaw: 0.664,
+    cameraPitch: 0.108,
+    cameraZoom: 1.6727435255122,
+    foldLimit: 1.166,
+    minRadius: 0.732,
+    fixedRadius: 1.662,
+  },
+};
+
+const mandelbox5b = {
+  shader: "mandelbox",
+  params: {
+    cameraX: 2.2351897905708,
+    cameraY: 4.7393140406215,
+    cameraZ: -0.24813765832375,
+    cameraZoom: 1.6744171056883,
+  },
+};
+
+function seg(sceneName, from, beats, to = null, interpEnd = 1) {
   if (to?.shader && to.shader !== from.shader) {
     throw new Error(`segment interpolation shader mismatch: ${from.shader} -> ${to.shader}`);
   }
@@ -408,6 +599,7 @@ function seg(sceneName, from, beats, to = null) {
     beats,
     params: from.params,
     endParams: to ? (to.params ?? to) : null,
+    interpEnd,
   };
 }
 
@@ -453,6 +645,14 @@ const SEGMENTS = [
   seg("mandelbox2", mandelbox2, 16, mandelbox2b),
   seg("mandelbox3", mandelbox3, 16, mandelbox3b),
   seg("mandelbox4", mandelbox4, 16, mandelbox4b),
+  seg("mandelbox4b", mandelbox4b, 8, mandelbox4c, 0.5),
+  seg("plasma1", plasma1, 2),
+  seg("grid3", grid3, 6),
+  seg("grid5", grid5, 8, grid5b),
+  seg("grid8", grid8, 8, grid8b),
+  seg("grid7", grid7, 8, grid7b),
+  seg("mandelbox5", mandelbox5, 8, mandelbox5b),
+  seg("plasma1", plasma1, 8),
 ];
 
 function buildSegments(list) {
@@ -491,7 +691,8 @@ export function sampleTimeline(timeline, beat) {
   let values = { ...seg.params };
   if (seg.endParams) {
     const span = seg.endBeat - seg.startBeat;
-    const t = span > 0 ? Math.min(1, Math.max(0, (beat - seg.startBeat) / span)) : 1;
+    const progress = span > 0 ? Math.min(1, Math.max(0, (beat - seg.startBeat) / span)) : 1;
+    const t = Math.min(1, Math.max(0, progress * seg.interpEnd));
     values = lerpParams(seg.params, seg.endParams, t);
   }
 
