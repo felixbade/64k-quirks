@@ -126,6 +126,26 @@ export const TIMELINE = {
         rotY: 1.916,
       },
     },
+    {
+      beat: 64,
+      shader: "tunnel",
+      params: {
+        speed: 1.2,
+        twist: 0.375,
+        rotSpeed: 0.0,
+        spiralDotSize: 8.0,
+        edgeDotSize: 12.0,
+        bgHue: 26,
+        bgSat: 88,
+        bgLig: 93,
+        edgeHue: 208,
+        edgeSat: 71,
+        edgeLig: 19,
+        spiralHue: 345,
+        spiralSat: 94,
+        spiralLig: 68,
+      },
+    },
   ],
 };
 
