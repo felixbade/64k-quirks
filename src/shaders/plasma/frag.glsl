@@ -89,10 +89,13 @@ float cnoise(vec3 P) {
 }
 
 // Fractal (fBm) 2D vector from 3D noise, sampled at decorrelated offsets.
-vec2 fbm2(vec3 p, float decay) {
+// `octaves` lets callers trade detail for speed; the loop bound stays a
+// compile-time constant so the compiler can still unroll, and we early-out.
+vec2 fbm2(vec3 p, float decay, int octaves) {
   vec2 sum = vec2(0.0);
   float amp = 1.0;
   for (int i = 0; i < NOISE_OCTAVES; i++) {
+    if (i >= octaves) break;
     sum.x += amp * cnoise(p);
     sum.y += amp * cnoise(p + vec3(17.3, 9.1, 23.7));
     p *= 2.0;
@@ -104,8 +107,10 @@ vec2 fbm2(vec3 p, float decay) {
 // Plasma scalar field. Sine layers use mutually irrational frequency ratios so
 // they never re-phase, and a time-advancing Perlin layer plus domain warp break
 // any spatial/temporal tiling -> the pattern keeps evolving without repeating.
-float plasma(vec2 p, float t) {
-  vec2 w = fbm2(vec3(p * 0.6, t * 0.15), 0.55);
+// `octaves` controls the warp detail; the extra Perlin layer is skipped in the
+// cheap regime since it is invisible once a ray is distorted through glass.
+float plasma(vec2 p, float t, int octaves) {
+  vec2 w = fbm2(vec3(p * 0.6, t * 0.15), 0.55, octaves);
   p += u_warp * w;
 
   float v = 0.0;
@@ -113,16 +118,21 @@ float plasma(vec2 p, float t) {
   v += sin(p.y * 1.37 - t * 0.91);
   v += sin((p.x + p.y) * 0.78 + t * 1.13);
   v += sin(length(p + vec2(1.3, -0.7)) * 1.21 - t * 0.67);
-  v += 2.2 * cnoise(vec3(p * 0.5, t * 0.25));
+  if (octaves >= 4) v += 2.2 * cnoise(vec3(p * 0.5, t * 0.25));
   return v;
 }
 
-vec3 background(vec2 p, float t) {
-  float v = plasma(p, t);
+vec3 plasmaColor(vec2 p, float t, int octaves) {
+  float v = plasma(p, t, octaves);
   // Smooth oscillation into [0, 1]; the field itself is unbounded but slow.
   float f = 0.5 + 0.5 * sin(v * 0.7);
   f = smoothstep(0.0, 1.0, f);
   return mix(u_colorA, u_colorB, f);
+}
+
+// Full-detail field for the directly-visible fullscreen background.
+vec3 background(vec2 p, float t) {
+  return plasmaColor(p, t, NOISE_OCTAVES);
 }
 
 vec3 env(vec3 ro, vec3 rd, float t) {
@@ -134,7 +144,10 @@ vec3 env(vec3 ro, vec3 rd, float t) {
   vec2 p = (ro + rd * h).xy * u_scale;
   // Roll spatial frequency down with distance so far samples stop aliasing.
   p /= 1.0 + h * 0.18;
-  return background(p, t);
+  // Cheap 2-octave field: this is sampled 7x per spectral pass plus the
+  // reflection, and the glass distortion + distance rolloff hide the missing
+  // detail, so the full 8-octave plasma here was the dominant GPU cost.
+  return plasmaColor(p, t, 2);
 }
 
 mat3 axisAngle(vec3 axis, float a) {
