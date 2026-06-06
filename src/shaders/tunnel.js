@@ -1,13 +1,19 @@
 import frag from "./tunnel.frag.glsl";
 import { generateNoiseData } from "./tunnel-noise.js";
 
+const TWIST_STEP = 1 / 8;
+
+function quantizeTwist(twist) {
+  return Math.round(twist / TWIST_STEP) * TWIST_STEP;
+}
+
 export const tunnel = {
   id: "tunnel",
   frag,
   resolution: [1920, 1080],
   defaults: {
     speed: 1.2,
-    twist: 0.4,
+    twist: 0.375,
   },
   cacheLocs(gl, program) {
     return {
@@ -37,12 +43,12 @@ export const tunnel = {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, res.noiseTex);
     gl.uniform1f(locs.u_speed, v.speed);
-    gl.uniform1f(locs.u_twist, v.twist);
+    gl.uniform1f(locs.u_twist, quantizeTwist(v.twist));
   },
   explorerHandlers: {
     speedTwist: (s, { dx, dy }) => ({
       speed: s.speed + dx / 500,
-      twist: s.twist - dy / 300,
+      twist: quantizeTwist(s.twist - dy / 300),
     }),
   },
 };

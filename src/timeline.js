@@ -60,7 +60,7 @@ export const TIMELINE = {
     {
       beat: 32,
       shader: "tunnel",
-      params: { speed: 1.2, twist: 0.4 },
+      params: { speed: 1.2, twist: 0.375 },
     },
   ],
 };
