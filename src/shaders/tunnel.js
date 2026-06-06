@@ -11,11 +11,32 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 // Drag hue (dx) + lightness (dy), scroll saturation (sdy). Operates on the
 // flat `${name}Hue|Sat|Lig` params and returns just those three keys.
-function dragHsl(name, s, { dx, dy, sdy }) {
+function dragHsl(name, s, { dx, dy, sdx, sdy }) {
+
+  let hue = s[`${name}Hue`];
+  let sat = s[`${name}Sat`];
+  let lig = s[`${name}Lig`];
+
+  // dx/dy: tone (lightess + saturation)
+  lig -= dy / 10;
+  sat += dx / 10;
+
+  // sdx/sdy: chromacity (hue + saturation)
+  let redness = Math.cos(hue * Math.PI / 180) * sat / 100;
+  let greenness = Math.sin(hue * Math.PI / 180) * sat / 100;
+  redness += sdx / 400;
+  greenness += sdy / 400;
+  sat = Math.sqrt(redness * redness + greenness * greenness) * 100;
+  hue = Math.atan2(greenness, redness) * 180 / Math.PI;
+
+  hue = (hue % 360 + 360) % 360;
+  sat = clamp(sat, 0, 100);
+  lig = clamp(lig, 0, 100);
+
   return {
-    [`${name}Hue`]: s[`${name}Hue`] + dx / 4,
-    [`${name}Sat`]: clamp(s[`${name}Sat`] - sdy / 50, 0, 100),
-    [`${name}Lig`]: clamp(s[`${name}Lig`] - dy / 10, 0, 100),
+    [`${name}Hue`]: Math.round(hue, 1),
+    [`${name}Sat`]: Math.round(sat, 1),
+    [`${name}Lig`]: Math.round(lig, 1),
   };
 }
 
