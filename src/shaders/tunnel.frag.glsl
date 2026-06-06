@@ -46,10 +46,12 @@ void main() {
   float blueInk = 1.0 - smoothstep(0.0, 0.5, tone);
   float pinkInk = 1.0 - smoothstep(0.25, 0.85, tone);
 
-  // Slight ink misregistration for that printed charm
-  vec2 frag = gl_FragCoord.xy;
-  float blueDots = halftone(frag + vec2(1.5, -1.0), 0.26, 5.0, blueInk);
-  float pinkDots = halftone(frag, 1.13, 5.0, pinkInk);
+  // Slight ink misregistration for that printed charm.
+  // Grid spins CCW at second-hand speed: one revolution per minute.
+  vec2 frag = gl_FragCoord.xy - u_resolution.xy * 0.5;
+  float spin = u_time * (6.28318530718 / 180.0);
+  float blueDots = halftone(frag + vec2(3.0, -2.0), 0.26 + spin, 8.0, blueInk);
+  float pinkDots = halftone(frag, 1.13 + spin, 12.0, pinkInk);
 
   vec3 col = PAPER;
   col = mix(col, col * INK_BLUE, blueDots);
