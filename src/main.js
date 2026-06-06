@@ -174,6 +174,26 @@ function snare(when, vel = 1) {
   osc.stop(t + 0.12);
 }
 
+function pluck(when, freq, vel = 1) {
+  ensureAudio();
+  const t = when ?? audioCtx.currentTime;
+  const dur = 0.12;
+  const osc = audioCtx.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(freq, t);
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(freq * 3, t);
+  bp.Q.value = 4;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(vel, t + 0.004);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(bp).connect(gain).connect(drumDest());
+  osc.start(t);
+  osc.stop(t + dur);
+}
+
 // Amen break: 2 bars of 16th notes (32 steps).
 const AMEN_STEPS = 32;
 const AMEN = {
@@ -187,6 +207,9 @@ const AMEN_FILL = {
   hat: new Set(Array.from({ length: 16 }, (_, i) => i * 2)),
 };
 const GHOST_SNARE = new Set([15, 30]);
+// Faint background pluck: step -> note (Hz), minor pentatonic around A2.
+const PLUCK_NOTES = { 2: 220, 6: 261.63, 14: 329.63, 18: 220, 24: 196, 26: 293.66 };
+const PLUCK_VEL = 0.14;
 const KICK_VEL = { 0: 1, 10: 0.82, 16: 0.92, 22: 0.78, 8: 0.55 };
 const SNARE_VEL = { 4: 1, 12: 0.95, 15: 0.42, 20: 0.88, 28: 0.98, 30: 0.38, 14: 0.5, 26: 0.45, 29: 0.52 };
 const AMEN_BPM = 165;
@@ -245,6 +268,7 @@ function toggleAmen() {
       }
       if (pat.hat.has(src)) hihat(when, drumVel("hat", src));
       else if (Math.random() < 0.06) hihat(when, 0.35);
+      if (PLUCK_NOTES[src]) pluck(when, PLUCK_NOTES[src], PLUCK_VEL * (0.9 + Math.random() * 0.2));
 
       amen.nextTime += stepDur * (1 + (Math.random() - 0.5) * 0.006);
       amen.step++;
