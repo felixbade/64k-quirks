@@ -1,0 +1,183 @@
+#version 300 es
+precision highp float;
+
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform float u_mbScale;        // mandelbox fold scale per iteration (classically negative)
+uniform float u_mbMinRadius;    // inner sphere-fold radius
+uniform float u_mbFixedRadius;  // outer sphere-fold radius
+uniform float u_mbFoldLimit;    // box-fold clamp limit
+uniform float u_mbSize;         // overall size
+uniform vec3 u_camPos;          // camera position
+uniform vec3 u_camDir;          // camera forward direction (from yaw/pitch)
+uniform float u_camZoom;        // forward scale (effective focal length / fov)
+
+out vec4 fragColor;
+
+const int MB_ITERS = 12;
+const int RAYS_PER_PIXEL = 1;
+const int STEPS_PER_RAY = 64;
+const int STEPS_PER_RAY_BOUNCE = 32;
+const int BOUNCES = 3;
+const float SKYBOX_DIST = 8.0;
+const float SURF_DIST = 0.001;
+const float BRIGHTNESS = 2.0;
+const float BOOST_CONTRAST = 0.0;
+const vec3 SKY_COLOR = vec3(1.0, 0.85, 0.6);    // hdr, yellow/orange
+const vec3 GROUND_COLOR = vec3(0.0, 0.05, 0.1); // hdr, blue/teal
+
+// Mandelbox distance estimator: box fold + sphere fold + scale, iterated.
+float map(vec3 p) {
+  float size = u_mbSize;
+  float scale = u_mbScale;
+  float minR2 = u_mbMinRadius * u_mbMinRadius;
+  float fixedR2 = u_mbFixedRadius * u_mbFixedRadius;
+  float foldLimit = u_mbFoldLimit;
+
+  vec3 c = p / size;
+  vec3 z = c;
+  float dr = 1.0;
+
+  for (int i = 0; i < MB_ITERS; i++) {
+    // Box fold: reflect components that escape the [-foldLimit, foldLimit] box.
+    z = clamp(z, -foldLimit, foldLimit) * 2.0 - z;
+
+    // Sphere fold: invert points inside the inner sphere, expand the shell.
+    float r2 = dot(z, z);
+    if (r2 < minR2) {
+      float t = fixedR2 / minR2;
+      z *= t;
+      dr *= t;
+    } else if (r2 < fixedR2) {
+      float t = fixedR2 / r2;
+      z *= t;
+      dr *= t;
+    }
+
+    z = scale * z + c;
+    dr = dr * abs(scale) + 1.0;
+  }
+
+  return length(z) / abs(dr) * size;
+}
+
+vec3 calcNormal(vec3 p) {
+  vec2 e = vec2(SURF_DIST, 0.0);
+  return normalize(vec3(
+    map(p + e.xyy) - map(p - e.xyy),
+    map(p + e.yxy) - map(p - e.yxy),
+    map(p + e.yyx) - map(p - e.yyx)
+  ));
+}
+
+// March a ray up to SKYBOX_DIST units. Returns true on hit, writing the distance to t.
+// escaped is set when the ray exited past SKYBOX_DIST; a false miss means the
+// step budget ran out while still inside the scene.
+bool trace(vec3 ro, vec3 rd, out float t, out bool escaped, int maxSteps) {
+  t = 0.0;
+  escaped = false;
+  for (int i = 0; i < maxSteps; i++) {
+    vec3 p = ro + rd * t;
+    float d = map(p);
+    if (d < SURF_DIST) return true;
+    t += d;
+    if (t > SKYBOX_DIST) { escaped = true; break; }
+  }
+  return false;
+}
+
+// Sky light: white in the top hemisphere, black in the bottom.
+vec3 sky(vec3 rd) {
+  return mix(GROUND_COLOR, SKY_COLOR, step(0.0, rd.y)) * BRIGHTNESS;
+}
+
+// Two pseudo-random floats in [0, 1) from a seed (Dave Hoskins hash23).
+vec2 hash23(vec3 p3) {
+  p3 = fract(p3 * vec3(0.1031, 0.1030, 0.0973));
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+// Uniform random direction within the hemisphere around normal n.
+vec3 randomHemisphereDir(vec3 n, vec3 seed) {
+  vec2 r = hash23(seed);
+  float z = r.x * 2.0 - 1.0;
+  float a = r.y * 6.2831853;
+  float s = sqrt(1.0 - z * z);
+  vec3 dir = vec3(s * cos(a), s * sin(a), z);
+  if (dot(dir, n) < 0.0) dir = -dir;
+  return dir;
+}
+
+// Light value for a ray. Misses see the sky. Hits bounce in a random
+// hemisphere direction: black if it hits the object again, sky color if it escapes.
+vec3 light(vec3 ro, vec3 rd, vec3 seed) {
+  float t;
+  bool escaped;
+  bool hit = trace(ro, rd, t, escaped, STEPS_PER_RAY);
+  if (!hit && escaped) {
+    return sky(rd);
+  }
+  // Either a real surface hit or the step budget ran out near geometry; in both
+  // cases reflect the ray rather than letting it fall through to the sky.
+
+  vec3 p = ro + rd * t;
+  vec3 incoming = rd;
+  for (int b = 0; b < BOUNCES; b++) {
+    vec3 n = calcNormal(p);
+    vec3 bseed = seed + float(b) * 1.618;
+
+    // Fresnel-Schlick reflectance (dielectric F0) for the current view angle.
+    float cosTheta = clamp(dot(-incoming, n), 0.0, 1.0);
+    float fresnel = 0.2 + 0.8 * pow(1.0 - cosTheta, 5.0);
+
+    // Fork: a fresnel-weighted fraction of rays mirror-reflect, the rest diffuse.
+    vec3 dir;
+    if (hash23(bseed * 1.37 + 7.0).x < fresnel) {
+      dir = reflect(incoming, n);
+    } else {
+      dir = randomHemisphereDir(n, bseed);
+    }
+
+    float tb;
+    bool escapedb;
+    bool hitb = trace(p + n * 0.01, dir, tb, escapedb, STEPS_PER_RAY_BOUNCE);
+
+    // A clean escape reaches the sky and ends the path.
+    if (escapedb) {
+      return sky(dir);
+    }
+    // Out of bounce budget, or the step budget ran out: fall back to ground.
+    if (b == BOUNCES - 1 || !hitb) {
+      return GROUND_COLOR * BRIGHTNESS;
+    }
+    // Real surface hit with bounces left: continue reflecting from here.
+    p = p + dir * tb;
+    incoming = dir;
+  }
+  return GROUND_COLOR * BRIGHTNESS;
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
+
+  // Free camera driven by position + yaw/pitch direction params.
+  vec3 ro = u_camPos;
+  vec3 fwd = normalize(u_camDir);
+  vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+  vec3 up = normalize(cross(right, fwd));
+  vec3 rd = normalize(u_camZoom * fwd + uv.x * right + uv.y * up);
+
+  vec3 l = vec3(0.0);
+  for (int i = 0; i < RAYS_PER_PIXEL; i++) {
+    vec3 seed = vec3(gl_FragCoord.xy, u_time + float(i) * 1.618);
+    l += light(ro, rd, seed);
+  }
+  l /= float(RAYS_PER_PIXEL);
+
+  vec3 col = l;
+
+  col = pow(col, vec3(exp(BOOST_CONTRAST)));
+  col = col / (1.0 + col); // Reinhard tone mapping
+  fragColor = vec4(col, 1.0);
+}

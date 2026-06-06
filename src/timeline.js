@@ -63,6 +63,19 @@ const kifs5 = {
   },
 };
 
+const kifs6 = {
+  shader: "kifs",
+  params: {
+    scale: 0.60514431541324,
+    size: 0.46,
+    offsetX: 0.09,
+    offsetY: 0.537,
+    offsetZ: -0.56966666666667,
+    rotX: -0.892,
+    rotY: 1.99,
+  },
+};
+
 const tunnel1 = {
   shader: "tunnel",
   params: {
