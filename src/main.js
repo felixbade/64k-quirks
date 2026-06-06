@@ -6,8 +6,9 @@ import { createEditSession } from "./edit.js";
 import { createPerfOverlay } from "./perf.js";
 import { seekMusic, startMusic, stopMusic } from "./audio.js";
 
+const DEMO_BARS = 64;
 const renderer = createRenderer(SHADERS);
-const transport = createTransport(TIMELINE.bpm);
+const transport = createTransport(TIMELINE.bpm, (DEMO_BARS * 4 * 60) / TIMELINE.bpm);
 const edit = createEditSession(SHADERS, renderer, SHADER_IDS);
 const perf = createPerfOverlay(renderer.gl);
 
