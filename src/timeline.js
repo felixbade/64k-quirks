@@ -76,6 +76,40 @@ const kifs6 = {
   },
 };
 
+const kifs7 = {
+  shader: "kifs",
+  params: {
+    scale: 1.9,
+    size: 2.0,
+    offsetX: 1.0,
+    offsetY: 0.85,
+    offsetZ: 0.6,
+    rotY: 0.578,
+    rotX: -0.594,
+    cameraYaw: 3.5135926535898,
+    cameraPitch: 0.32395444572929,
+    cameraOrbit: 0,
+    cameraX: -0.039538217852679,
+    cameraY: 0.18048116871036,
+    cameraZ: 3.1903693035535,
+    cameraZoom: 1.5,
+  },
+};
+
+const kifs7b = {
+  shader: "kifs",
+  params: {
+    ...kifs7.params,
+    cameraX: -0.80482482830408,
+    cameraY: 0.11317063857027,
+    cameraZ: 3.6342592387246,
+    cameraZoom: 2.0471838317792,
+    cameraOrbit: 0,
+    cameraYaw: 2.9515926535898,
+    cameraPitch: 0.44755444572929
+  },
+};
+
 const tunnel1 = {
   shader: "tunnel",
   params: {
@@ -220,23 +254,45 @@ const grid10 = {
   shader: "grid",
   params: {
     ...grid2.params,
-    mirrorAngle1: 1.262,
-    mirrorOffset1: -4.74,
     centerX: 13.338389340854,
     centerY: 17.405674942839,
     zoomLog: -3.663,
     rotation: 0.70399999999999,
+
+    mirrorAngle0: -0.8396,
+    mirrorOffset0: -0.156,
+    mirrorAngle1: 1.2644,
+    mirrorOffset1: -3.384,
+    mirrorAngle2: -2.8556,
+    mirrorOffset2: 8.43,
+    lineHue: 45,
+    lineSat: 100,
+    lineLig: 67,
+    bgHue: 33,
+    bgSat: 100,
+    bgLig: 9
   },
 };
 
 const grid10b = {
   shader: "grid",
   params: {
-    mirrorAngle1: 1.264,
-    mirrorOffset1: -4.71,
-    mirrorAngle2: -2.842,
-    mirrorAngle0: -0.878,
-    mirrorOffset0: -0.96,
+    mirrorAngle0: -0.8416,
+    mirrorOffset0: -0.156,
+    mirrorAngle1: 1.2644,
+    mirrorOffset1: -3.444,
+    mirrorAngle2: -2.8636,
+    mirrorOffset2: 8.1,
+    lineHue: 45,
+    lineSat: 100,
+    lineLig: 67,
+    bgHue: 33,
+    bgSat: 100,
+    bgLig: 9,
+    noiseStrength: 0.18983783087408,
+    noiseSize: 9.0687080694749,
+    noiseDecay: 0.36,
+    noiseZ: 0.29700000000002
   },
 };
 
@@ -724,12 +780,10 @@ const SEGMENTS = [
   seg("kifs4", kifs4, 4),
   seg("grid2", grid2, 2),
   seg("kifs5", kifs5, 2),
-  seg("kifs4", kifs4, 4),
-  seg("kifs1", kifs1, 2),
-  seg("grid10", grid10, 2, grid10b),
-  seg("kifs2", kifs2, 6),
-  seg("grid11", grid11, 6, grid11b),
-  seg("kifs2", kifs2, 4),
+  seg("grid10", grid10, 6, grid10b),
+  seg("kifs2", kifs2, 2),
+  seg("grid11", grid11, 8, grid11b),
+  seg("kifs7", kifs7, 8, kifs7b),
   seg("grid3", grid3, 8),
   seg("plasma1", plasma1, 2),
   seg("grid3", grid3, 6),
@@ -739,8 +793,8 @@ const SEGMENTS = [
   seg("mandelbox4", mandelbox4, 16, mandelbox4b),
   seg("mandelbox4b", mandelbox4b, 8, mandelbox4c, 0.5),
   seg("plasma1", plasma1, 2),
-  seg("grid3", grid3, 6),
-  seg("grid5", grid5, 8, grid5b),
+  seg("grid5", grid5, 6, grid5b),
+  seg("grid3", grid3, 8),
   seg("grid8", grid8, 8, grid8b),
   seg("grid7", grid7, 8, grid7b),
   seg("mandelbox5", mandelbox5, 8, mandelbox5b),

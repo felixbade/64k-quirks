@@ -7,6 +7,10 @@ uniform float u_kifsScale;  // KIFS fold scale per iteration
 uniform vec3 u_kifsOffset;  // KIFS fold offset
 uniform float u_kifsSize;   // KIFS overall size
 uniform vec2 u_kifsRot;     // KIFS fold rotation (rotX angle, rotY angle)
+uniform vec3 u_camPos;
+uniform vec3 u_camDir;
+uniform float u_camZoom;
+uniform float u_camOrbit;
 
 out vec4 fragColor;
 
@@ -158,14 +162,14 @@ vec3 light(vec3 ro, vec3 rd, vec3 seed) {
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
 
-  // Orbit camera around the fractal (centered at origin).
   vec3 target = vec3(0.0);
   float a = u_time * 0.3;
-  vec3 ro = target + vec3(sin(a), 0.25, cos(a)) * 3.2;
-  vec3 fwd = normalize(target - ro);
+  vec3 orbitRo = target + vec3(sin(a), 0.25, cos(a)) * 3.2;
+  vec3 ro = mix(u_camPos, orbitRo, u_camOrbit);
+  vec3 fwd = normalize(mix(u_camDir, target - orbitRo, u_camOrbit));
   vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
   vec3 up = cross(fwd, right);
-  vec3 rd = normalize(uv.x * right + uv.y * up + 1.5 * fwd);
+  vec3 rd = normalize(uv.x * right + uv.y * up + u_camZoom * fwd);
 
   vec3 l = vec3(0.0);
   for (int i = 0; i < RAYS_PER_PIXEL; i++) {
