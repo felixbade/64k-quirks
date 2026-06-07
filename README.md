@@ -4,7 +4,9 @@ Demo for Graffathon 2026 Advanced compo.
 
 ![thumbnail](thumbnail.png)
 
-[Watch the recording](https://www.youtube.com/watch?v=37PWIm1RvE0&list=PLmRDkQf8W1WFX7ED2q87HncbY_u8ZW3Hm&index=3)
+[Play the demo in your browser](https://felixbade.fi/2026/64k-quirks/)
+
+[Watch the recording on YouTube](https://www.youtube.com/watch?v=37PWIm1RvE0&list=PLmRDkQf8W1WFX7ED2q87HncbY_u8ZW3Hm&index=3)
 
 
 ## Build
