@@ -11,8 +11,10 @@ renderer.warmup();
 let startAt = 0;
 let playing = false;
 
+const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+const playLabel = hasTouch ? "<kbd>Space</kbd> / <kbd>touch</kbd>" : "<kbd>Space</kbd>";
 const overlay = document.createElement("div");
-overlay.innerHTML = "<div><p><kbd>F</kbd> fullscreen</p><p><kbd>Space</kbd> play</p></div>";
+overlay.innerHTML = "<div><p><kbd>F</kbd> fullscreen</p><p>" + playLabel + " play</p></div>";
 overlay.style.cssText =
   "position:fixed;inset:0;display:grid;place-items:center;background:#000;color:#fff;font:28px monospace;text-align:center;z-index:2";
 const style = document.createElement("style");
@@ -63,3 +65,13 @@ window.addEventListener("keydown", (e) => {
     else renderer.canvas.requestFullscreen();
   }
 });
+
+window.addEventListener(
+  "touchstart",
+  (e) => {
+    if (playing) return;
+    e.preventDefault();
+    start();
+  },
+  { passive: false }
+);
