@@ -8,6 +8,8 @@ Demo for Graffathon 2026 Advanced compo.
 
 [Watch the recording on YouTube](https://www.youtube.com/watch?v=37PWIm1RvE0&list=PLmRDkQf8W1WFX7ED2q87HncbY_u8ZW3Hm&index=3)
 
+[Explore the parameters yourself](https://felixbade.fi/2026/64k-quirks/interactive/)
+
 
 ## Build
 
@@ -15,6 +17,7 @@ Demo for Graffathon 2026 Advanced compo.
 npm install
 npm run dev      # live reload + parameter explorer
 npm run export   # 64kB export path
+npm run export-interactive   # parameter explorer export
 ```
 
 ## Dev reflections

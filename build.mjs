@@ -5,6 +5,8 @@ import { join } from "node:path";
 
 const serve = process.argv.includes("--serve");
 const exportMode = process.argv.includes("--export");
+const exportInteractive = process.argv.includes("--export-interactive");
+const minifyGlslMode = exportMode || exportInteractive;
 const PORT = Number(process.env.PORT) || 5173;
 const EXPORT_BUDGET = 64 * 1024;
 
@@ -55,7 +57,7 @@ const glslLoader = {
   setup(build) {
     build.onLoad({ filter: /\.glsl$/ }, async (args) => {
       const raw = await readFile(args.path, "utf8");
-      const text = exportMode ? minifyGlsl(raw) : raw;
+      const text = minifyGlslMode ? minifyGlsl(raw) : raw;
       return { contents: `export default ${JSON.stringify(text)};`, loader: "js" };
     });
   },
@@ -94,7 +96,11 @@ ${livereload}
 
 async function writeHtml(js) {
   const html = makeHtml(js);
-  const outFile = exportMode ? "dist/export.html" : "dist/index.html";
+  const outFile = exportInteractive
+    ? "dist/export-interactive.html"
+    : exportMode
+      ? "dist/export.html"
+      : "dist/index.html";
   await mkdir("dist", { recursive: true });
   await writeFile(outFile, html);
   const bytes = Buffer.byteLength(html);
@@ -116,8 +122,14 @@ const htmlWriter = {
   },
 };
 
+const entryPoint = exportInteractive
+  ? "src/export-interactive.js"
+  : exportMode
+    ? "src/export.js"
+    : "src/main.js";
+
 const buildOpts = {
-  entryPoints: [exportMode ? "src/export.js" : "src/main.js"],
+  entryPoints: [entryPoint],
   bundle: true,
   minify: !serve || exportMode,
   format: "iife",
