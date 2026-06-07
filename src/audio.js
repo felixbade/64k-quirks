@@ -4,7 +4,6 @@ let buses = null;
 
 function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
   if (!drumBus) {
     const gain = audioCtx.createGain();
     const lp = audioCtx.createBiquadFilter();
@@ -45,6 +44,21 @@ function ensureAudio() {
 function drumDest(name = "kick") {
   ensureAudio();
   return buses[name];
+}
+
+// Call synchronously inside a user gesture. iOS Safari needs resume() plus a
+// real node started in the same turn — silent buffers alone aren't enough.
+export function unlockAudio() {
+  ensureAudio();
+  const ctx = audioCtx;
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.00001, t);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.02);
+  if (ctx.state !== "running") void ctx.resume();
 }
 
 function makeDistortionCurve(amount) {
@@ -249,16 +263,16 @@ function humanizeTime(t, step, stepDur) {
 
 let amen = null;
 
-export function startMusic(bpm, startTime = 0) {
-  ensureAudio();
-  if (amen) return;
+function runAmen(bpm, startTime) {
   const stepDur = 60 / bpm / 4;
   const tripletDur = stepDur * (4 / 3);
+  const lead = 0.12;
+  const t0 = audioCtx.currentTime;
   amen = {
     step: Math.round(startTime / stepDur),
-    nextTime: audioCtx.currentTime + 0.05,
+    nextTime: t0 + lead,
     tripletStep: Math.round(startTime / tripletDur),
-    tripletNextTime: audioCtx.currentTime + 0.05,
+    tripletNextTime: t0 + lead,
     tripletDur,
     timer: 0,
   };
@@ -306,13 +320,45 @@ export function startMusic(bpm, startTime = 0) {
       amen.tripletStep++;
     }
   };
+  const tick = () => {
+    if (!amen) return;
+    schedule();
+    amen.timer = requestAnimationFrame(tick);
+  };
   schedule();
-  amen.timer = setInterval(schedule, 25);
+  amen.timer = requestAnimationFrame(tick);
+}
+
+export function startMusic(bpm, startTime = 0) {
+  ensureAudio();
+  if (amen) return;
+  const begin = () => {
+    if (amen) return;
+    runAmen(bpm, startTime);
+  };
+  if (audioCtx.state === "running") {
+    begin();
+    return;
+  }
+  const onState = () => {
+    if (audioCtx.state !== "running") return;
+    audioCtx.removeEventListener("statechange", onState);
+    clearTimeout(fallback);
+    begin();
+  };
+  audioCtx.addEventListener("statechange", onState);
+  void audioCtx.resume();
+  onState();
+  const fallback = setTimeout(() => {
+    audioCtx.removeEventListener("statechange", onState);
+    void audioCtx.resume();
+    begin();
+  }, 300);
 }
 
 export function stopMusic() {
   if (!amen) return;
-  clearInterval(amen.timer);
+  cancelAnimationFrame(amen.timer);
   amen = null;
 }
 

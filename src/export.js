@@ -1,7 +1,7 @@
 import { createRenderer } from "./gl/renderer.js";
 import { SHADERS } from "./shaders/index.js";
 import { TIMELINE, sampleTimeline } from "./timeline.js";
-import { startMusic, stopMusic } from "./audio.js";
+import { startMusic, stopMusic, unlockAudio } from "./audio.js";
 
 const DEMO_BARS = 64;
 const DURATION = (DEMO_BARS * 4 * 60) / TIMELINE.bpm;
@@ -47,10 +47,11 @@ function frame(now) {
 
 function start() {
   if (playing) return;
+  playing = true;
+  unlockAudio();
+  startMusic(TIMELINE.bpm, 0);
   overlay.remove();
   startAt = performance.now();
-  playing = true;
-  startMusic(TIMELINE.bpm, 0);
   requestAnimationFrame(frame);
 }
 
@@ -66,12 +67,10 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-window.addEventListener(
-  "touchstart",
-  (e) => {
-    if (playing) return;
-    e.preventDefault();
-    start();
-  },
-  { passive: false }
-);
+function onPlayGesture(e) {
+  if (playing) return;
+  e.preventDefault();
+  start();
+}
+overlay.addEventListener("pointerup", onPlayGesture);
+overlay.addEventListener("click", onPlayGesture);
