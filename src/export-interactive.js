@@ -16,7 +16,7 @@ for (const seg of TIMELINE.segments) {
   scenes.push({ shaderId: seg.shader, sceneName: seg.sceneName, values: { ...seg.params } });
 }
 
-let sceneIndex = 0;
+let sceneIndex = Math.max(0, scenes.findIndex((s) => s.shaderId === "grid"));
 let sample = scenes[sceneIndex];
 
 const edit = createEditSession(SHADERS, () => sample);
