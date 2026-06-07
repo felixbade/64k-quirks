@@ -12,9 +12,13 @@ let startAt = 0;
 let playing = false;
 
 const overlay = document.createElement("div");
-overlay.innerHTML = "f: fullscreen<br>space: play";
+overlay.innerHTML = "<div><p><kbd>F</kbd> fullscreen</p><p><kbd>Space</kbd> play</p></div>";
 overlay.style.cssText =
-  "position:fixed;inset:0;display:grid;place-items:center;background:#000;color:#fff;font:32px monospace;text-align:center;z-index:2";
+  "position:fixed;inset:0;display:grid;place-items:center;background:#000;color:#fff;font:28px monospace;text-align:center;z-index:2";
+const style = document.createElement("style");
+style.textContent =
+  "p{margin:1em}kbd{display:inline-block;min-width:2.5em;padding:.25em .45em;border-radius:.3em;background:#222;border:1px solid #444;color:#fff}";
+document.head.appendChild(style);
 document.body.appendChild(overlay);
 
 function currentTime(now) {
@@ -28,6 +32,8 @@ function frame(now) {
   if (time >= DURATION) {
     stopMusic();
     playing = false;
+    renderer.gl.clearColor(0, 0, 0, 1);
+    renderer.gl.clear(renderer.gl.COLOR_BUFFER_BIT);
     return;
   }
 
